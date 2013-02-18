@@ -19,13 +19,13 @@ public class MappingList
 
 		if (expandedQuery.isEmpty()) throw new Exception("Parameters have to be not empty");
 
-		ExpandedQueryObject uniqueName = new ExpandedQueryObject(expandedQuery, featureID);
+		ExpandedQueryObject uniqueMapping = new ExpandedQueryObject(expandedQuery, featureID);
 
-		if (uniqueElements.containsKey(uniqueName))
+		if (uniqueElements.containsKey(uniqueMapping))
 		{
-			if (similarity > uniqueElements.get(uniqueName))
+			if (similarity > uniqueElements.get(uniqueMapping))
 			{
-				uniqueElements.put(uniqueName, similarity);
+				uniqueElements.put(uniqueMapping, similarity);
 			}
 		}
 		else
@@ -33,7 +33,7 @@ public class MappingList
 			// LinkedInformation inf = new LinkedInformation(expandedQuery,
 			// matchedItem, similarity, measurementName);
 
-			uniqueElements.put(uniqueName, similarity);
+			uniqueElements.put(uniqueMapping, similarity);
 		}
 	}
 
