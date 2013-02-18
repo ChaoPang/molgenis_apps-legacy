@@ -37,7 +37,6 @@ import org.molgenis.protocol.Protocol;
 import org.molgenis.util.Entity;
 import org.molgenis.util.tuple.HttpServletRequestTuple;
 import org.molgenis.util.tuple.SingletonTuple;
-import org.molgenis.util.tuple.Tuple;
 
 import plugins.emptydb.emptyDatabase;
 import app.FillMetadata;
@@ -517,15 +516,6 @@ public class BiobankImporter extends PluginModel<Entity>
 						}
 					}
 
-					if (request.getBoolean(columnIndex) != null)
-					{
-						System.out.println();
-					}
-					else
-					{
-
-					}
-
 					columnIndex++;
 
 					while (request.getString(member + "_options_" + count) != null)
@@ -660,8 +650,8 @@ public class BiobankImporter extends PluginModel<Entity>
 	}
 
 	@SuppressWarnings("unchecked")
-	public void loadDataFromExcel(Database db, MolgenisRequest request, Investigation inv) throws BiffException, IOException,
-			DatabaseException
+	public void loadDataFromExcel(Database db, MolgenisRequest request, Investigation inv) throws BiffException,
+			IOException, DatabaseException
 	{
 
 		File tmpDir = new File(System.getProperty("java.io.tmpdir"));
