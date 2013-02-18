@@ -368,27 +368,64 @@ function retrieveExpandedQueries(predictor, matchedVariable, url)
 		},
 		async : false,
 	}).done(function(status){
-
 		table = status["table"];
-
 		$('#expandedQueryTable').remove();
-		
 		$('#afterMapping').append(table);
-
-//		$('#' + matchedVariable).dialog({
-//			title : "Expanded queries",
-//			height: 300,
-//			width: 600,
-//			modal: true,
-//			buttons: {
-//				Cancel: function() {
-//					$( this ).dialog( "close" );
-//				}
-//			},
-//		});
-//		$('#' + matchedVariable).show();
-		
 		$('#expandedQueryTable').modal('show');
+		$('#expandedQueryTable span').each(function(){
+			$(this).css('cursor','pointer');
+			$(this).tooltip({
+				title : 'click to check ontology term'
+			});
+			$(this).click(function(){
+				getOntologyTerm($(this), url);
+			});
+		});
+	});
+}
+
+function getOntologyTerm(element, url){
+	$.ajax({
+		url : url + "&__action=download_json_getOntologyTermInfo",
+		data : {
+			"ontologyTermId" : $(element).attr('id'),
+		},
+		async : false,
+	}).done(function(status){
+		var ontologyTermID = status.ontologyTermID;
+		var label = status.label;
+		var listOfDefinitions = status.ontologyTermDefinition;
+		var listOfSynonyms = status.synonyms;
+		var table = $('<table />').attr('class','table table-bordered');
+		table.append('<tr><th>Ontology term ID</th><td>' + ontologyTermID + '</td></tr>');
+		table.append('<tr><th>Label</th><td>' + label + '</td></tr>');
+		if(listOfDefinitions !== null)
+			table.append('<tr><th>Definitions</th><td>' + listOfDefinitions[0] + '</td></tr>');
+		if(listOfSynonyms !== null)
+			table.append('<tr><th>Synonyms</th><td>' + listOfSynonyms[0] + '</td></tr>');
+		
+		if($('#showOntologyTerm')){
+			$('#showOntologyTerm').remove();
+		}
+		var row = $('<div />').attr({
+			'id' : 'showOntologyTerm',
+			'class' : 'modal show'
+		});
+		var header = $('<div />').attr('class', 'modal-header');
+		$('<h3 />').text('Ontology term').appendTo(header);
+		var footer = $('<div />').attr('class', 'modal-footer');
+		$('<button />').attr({
+			 'class' : 'btn', 
+			 'data-dismiss' : 'modal',
+			 'aria-hidden' : 'true'
+		}).text('Close').appendTo(footer);
+		var body = $('<div />').attr('class', 'modal-body');
+		table.appendTo(body);
+		header.appendTo(row);
+		body.appendTo(row);
+		footer.appendTo(row);
+		row.appendTo('body');
+		$('#showOntologyTerm').modal('show');
 	});
 }
 

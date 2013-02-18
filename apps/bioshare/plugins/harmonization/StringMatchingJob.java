@@ -21,31 +21,21 @@ public class StringMatchingJob implements StatefulJob
 		try
 		{
 			PredictorInfo predictor = (PredictorInfo) context.getJobDetail().getJobDataMap().get("predictor");
-
 			HarmonizationModel model = (HarmonizationModel) context.getJobDetail().getJobDataMap().get("model");
-
 			NGramMatchingModel matchingModel = (NGramMatchingModel) context.getJobDetail().getJobDataMap()
 					.get("matchingModel");
-
-			// MappingList mappings = new MappingList();
-
 			Map<String, MappingList> mappingsForStudies = new HashMap<String, MappingList>();
-
-			for (Entry<String, Map<Integer, List<Set<String>>>> entry : model.getnGramsMapForMeasurements()
-					.entrySet())
+			for (Entry<String, Map<Integer, List<Set<String>>>> entry : model.getnGramsMapForMeasurements().entrySet())
 			{
 				String investigationName = entry.getKey();
 				MappingList mappingList = new MappingList();
-
-				for (String eachQuery : predictor.getExpandedQuery())
+				for (Entry<String, String> eachQueryEntry : predictor.getExpandedQuery().entrySet())
 				{
-					executeMapping(matchingModel, eachQuery, mappingList, entry.getValue());
+					executeMapping(matchingModel, eachQueryEntry, mappingList, entry.getValue());
 					model.incrementFinishedQueries();
 				}
-
 				mappingsForStudies.put(investigationName, mappingList);
 			}
-
 			model.incrementFinishedJob();
 			predictor.setMappings(mappingsForStudies);
 		}
@@ -55,23 +45,19 @@ public class StringMatchingJob implements StatefulJob
 		}
 	}
 
-	private void executeMapping(NGramMatchingModel matchingModel, String eachQuery, MappingList mappingList,
-			Map<Integer, List<Set<String>>> measurementMap) throws Exception
+	private void executeMapping(NGramMatchingModel matchingModel, Entry<String, String> eachQueryEntry,
+			MappingList mappingList, Map<Integer, List<Set<String>>> measurementMap) throws Exception
 	{
-		Set<String> tokens = matchingModel.createNGrams(eachQuery.toLowerCase().trim(), true);
+		Set<String> tokens = matchingModel.createNGrams(eachQueryEntry.getKey().toLowerCase().trim(), true);
 
 		for (Integer featureID : measurementMap.keySet())
 		{
-			// double highScore = 0;
-
 			for (Set<String> eachNGrams : measurementMap.get(featureID))
 			{
 				double similarity = matchingModel.calculateScore(eachNGrams, tokens);
 
-				mappingList.add(eachQuery, featureID, similarity);
+				mappingList.add(eachQueryEntry.getValue(), featureID, similarity);
 			}
-
-			// mappingList.add(eachQuery, featureID, highScore);
 		}
 	}
 }

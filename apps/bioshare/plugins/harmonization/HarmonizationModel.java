@@ -23,51 +23,31 @@ public class HarmonizationModel extends EasyPluginModel
 	private static final long serialVersionUID = 4404912460247332113L;
 
 	private final AtomicInteger countForFinishedQueries = new AtomicInteger(0);
-
 	private final AtomicInteger countForFinishedJobs = new AtomicInteger(0);
-
 	private int totalNumber = 0;
-
 	private String retrieveResult = Boolean.FALSE.toString();
-
 	private String selectedPredictionModel = null;
-
 	private Scheduler scheduler = null;
-
 	private BioportalOntologyService os = null;
-
 	private NGramMatchingModel model = null;
-
 	private catalogueTreeComponent catalogue = null;
-
 	private List<String> selectedValidationStudy = null;
-
 	private List<String> predictionModels = new ArrayList<String>();
-
 	private List<String> validationStudies = new ArrayList<String>();
-
 	private List<String> reservedInv = new ArrayList<String>();
-
 	private Map<Integer, PredictorInfo> predictors = new HashMap<Integer, PredictorInfo>();
-
 	// private String[] ontologies = { "1351", "1136", "1353", "2018", "1032" };
 	private String[] ontologies =
 	{ "1353", "1032", "1427" };
 	// "1032", "1427",
 	private List<String> ontologyAccessions = Arrays.asList(ontologies);
-
 	private String freeMakerTemplate = "Harmonization.ftl";
-
 	private int totalJobs = 0;
-
 	private long startTime = 0;
-
 	private String estimatedTime = "";
-
 	private String processedTime = "";
-
 	private boolean isStringMatching = false;
-
+	private Map<String, OntologyTermContainer> cachedOntologyTerms = null;
 	private Map<String, Map<Integer, List<Set<String>>>> nGramsMapForMeasurements;
 
 	public HarmonizationModel(Harmonization controller)
@@ -311,5 +291,15 @@ public class HarmonizationModel extends EasyPluginModel
 	public void setInitialFinishedJob(int value)
 	{
 		countForFinishedJobs.set(value);
+	}
+
+	public Map<String, OntologyTermContainer> getCachedOntologyTerms()
+	{
+		return cachedOntologyTerms;
+	}
+
+	public void setCachedOntologyTerms(Map<String, OntologyTermContainer> cachedOntologyTerms)
+	{
+		this.cachedOntologyTerms = cachedOntologyTerms;
 	}
 }

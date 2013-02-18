@@ -19,10 +19,8 @@ public class PredictorInfo
 	private String label = null;
 	private String identifier = null;
 	private List<String> buildingBlocks = new ArrayList<String>();
-	private List<String> expandedQuery = new ArrayList<String>();
+	private Map<String, String> expandedQuery = new HashMap<String, String>();
 	private Map<String, Measurement> finalMappings = new HashMap<String, Measurement>();
-	// private Map<String, String> category = new HashMap<String, String>();
-	// private Map<String, String> description = new HashMap<String, String>();
 	private Map<SimilarityScore, Double> similarity = new LinkedHashMap<SimilarityScore, Double>();
 	private Map<Integer, List<String>> expandedQueryPerMapping = new LinkedHashMap<Integer, List<String>>();
 	private Map<String, MappingList> mappingsForStudies = new HashMap<String, MappingList>();
@@ -57,14 +55,10 @@ public class PredictorInfo
 		}
 	}
 
-	public void setExpandedQuery(List<String> expandedQuery)
-	{
-		this.expandedQuery = expandedQuery;
-	}
-
-	// public void setCategory(HashMap<String, String> category)
+	//
+	// public void setExpandedQuery(List<String> expandedQuery)
 	// {
-	// this.category = category;
+	// this.expandedQuery = expandedQuery;
 	// }
 
 	public void setFinalMappings(HashMap<String, Measurement> finalMaapings)
@@ -83,52 +77,26 @@ public class PredictorInfo
 		}
 	}
 
-	// public void setDescription(String name, String measurementDescription)
-	// {
-	// if (!description.containsKey(name))
-	// {
-	// description.put(name, measurementDescription);
-	// }
-	// }
-
 	public void setMappings(Map<String, MappingList> mappingsForStudies)
 	{
 		this.mappingsForStudies = mappingsForStudies;
 
 		for (Entry<String, MappingList> entry : mappingsForStudies.entrySet())
 		{
-			// String investigationName = entry.getKey();
-
 			MappingList mappings = entry.getValue();
-
 			List<LinkedInformation> allMappings = mappings.getSortedInformation();
-
 			for (int i = allMappings.size(); i > 0; i--)
 			{
 				LinkedInformation eachRow = allMappings.get(i - 1);
-
 				String expandedQuery = eachRow.getExpandedQuery();
-
 				Integer featureID = eachRow.getFeatureID();
-
 				double similarity = eachRow.getSimilarity();
-
-				// StringBuilder expandedQueryIdentifier = new StringBuilder();
-				//
-				// expandedQueryIdentifier.append(investigationName).append(expandedQuery).append("_").append(featureID);
-
 				SimilarityScore similarityScore = new SimilarityScore(featureID, expandedQuery);
-
 				if (!this.similarity.containsKey(similarityScore))
 				{
 					this.similarity.put(similarityScore, similarity);
 				}
-
-				// MeasurementPerStudy measurementStudy = new
-				// MeasurementPerStudy(featureID, investigationName);
-
 				List<String> temp = null;
-
 				if (this.expandedQueryPerMapping.containsKey(featureID))
 				{
 					temp = this.expandedQueryPerMapping.get(featureID);
@@ -137,9 +105,7 @@ public class PredictorInfo
 				{
 					temp = new ArrayList<String>();
 				}
-
 				if (!temp.contains(expandedQuery)) temp.add(expandedQuery);
-
 				this.expandedQueryPerMapping.put(featureID, temp);
 			}
 		}
@@ -160,7 +126,7 @@ public class PredictorInfo
 		return mappingsForStudies;
 	}
 
-	public List<String> getExpandedQuery()
+	public Map<String, String> getExpandedQuery()
 	{
 		return expandedQuery;
 	}
@@ -174,11 +140,6 @@ public class PredictorInfo
 	{
 		return label;
 	}
-
-	// public Map<String, String> getCategory()
-	// {
-	// return category;
-	// }
 
 	public boolean hasMappingResult()
 	{
@@ -211,14 +172,6 @@ public class PredictorInfo
 			return null;
 	}
 
-	// public String getDescription(String measurementName)
-	// {
-	// if (description.containsKey(measurementName)) return
-	// description.get(measurementName);
-	// else
-	// return null;
-	// }
-	//
 	public Double getSimilarity(Integer featureID, String expandedQuery)
 	{
 		SimilarityScore mea = new SimilarityScore(featureID, expandedQuery);
@@ -242,57 +195,6 @@ public class PredictorInfo
 	{
 		this.id = id;
 	}
-
-	// private static class MeasurementSimilarity
-	// {
-	// private final Measurement measurement;
-	// private final Double similarity;
-	//
-	// public MeasurementSimilarity(Measurement measurement, Double similarity)
-	// {
-	// this.measurement = measurement;
-	// this.similarity = similarity;
-	// }
-	//
-	// public Measurement getMeasurement()
-	// {
-	// return measurement;
-	// }
-	//
-	// public Double getSimilarity()
-	// {
-	// return similarity;
-	// }
-	// }
-
-	// private static class MeasurementExpandedQuery
-	// {
-	//
-	// private final Measurement measurement;
-	// private List<String> expandeQueries;
-	//
-	// public MeasurementExpandedQuery(Measurement measurement)
-	// {
-	// this.measurement = measurement;
-	// expandeQueries = new ArrayList<String>();
-	// }
-	//
-	// public List<String> getExpandeQueries()
-	// {
-	// return expandeQueries;
-	// }
-	//
-	// public void addExpandeQueries(String query)
-	// {
-	// this.expandeQueries.add(query);
-	// }
-	//
-	// public Measurement getMeasurement()
-	// {
-	// return measurement;
-	// }
-	//
-	// }
 
 	public static class MeasurementPerStudy
 	{

@@ -512,6 +512,16 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 
 					status.put("success", true);
 				}
+				else if ("download_json_getOntologyTermInfo".equals(request.getAction()))
+				{
+					String identifiers[] = request.getString("ontologyTermId").split("-");
+					String ontologyTermId = identifiers[0];
+					if (this.getModel().getCachedOntologyTerms().containsKey(ontologyTermId))
+					{
+						OntologyTermContainer container = this.getModel().getCachedOntologyTerms().get(ontologyTermId);
+						src = container;
+					}
+				}
 				else if ("download_json_retrieveResult".equals(request.getAction()))
 				{
 					String investigationName = request.getString("matchingValidationStudy");
@@ -652,7 +662,8 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 
 		if (feature != null)
 		{
-			table.append("<div id=\"expandedQueryTable\" class=\"modal hide fade\">")
+			table.append(
+					"<div id=\"expandedQueryTable\" style=\"width:800px;margin-left:-400px\" class=\"modal hide fade\">")
 					.append("<div class=\"modal-header\">Expanded query for ").append(predictorInfo.getLabel())
 					.append("</div>").append("<div class=\"modal-body\">")
 					.append("<table class=\"table table-striped\" style=\"width:100%;overflow:auto;\">")
@@ -798,6 +809,7 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 			this.getModel().setInitialFinishedJob(0);
 			this.getModel().setInitialFinishedQueries(0);
 			this.getModel().setStartTime(System.currentTimeMillis());
+			this.getModel().setCachedOntologyTerms(new HashMap<String, OntologyTermContainer>());
 			Properties prop = new Properties();
 			prop.setProperty("org.quartz.threadPool.class", "org.quartz.simpl.SimpleThreadPool");
 			prop.setProperty("org.quartz.threadPool.threadCount", "4");
@@ -1338,41 +1350,30 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 				.getModel().getSelectedValidationStudy())))
 		{
 			String invesigationName = m.getInvestigation_Name();
-
 			List<String> fields = new ArrayList<String>();
-
 			if (!StringUtils.isEmpty(m.getDescription()))
 			{
 				fields.add(m.getDescription());
-
 				StringBuilder combinedString = new StringBuilder();
-
 				if (!m.getCategories_Name().isEmpty())
 				{
 					for (String categoryName : m.getCategories_Name())
 					{
 						combinedString.delete(0, combinedString.length());
-
 						combinedString.append(categoryName.replaceAll(m.getInvestigation_Name(), "")).append(' ')
 								.append(m.getDescription());
-
 						fields.add(combinedString.toString().replace('_', ' '));
 					}
 				}
 			}
-
 			List<Set<String>> listOfNGrams = new ArrayList<Set<String>>();
-
 			for (String eachEntry : fields)
 			{
 				Set<String> dataItemTokens = this.getModel().getMatchingModel()
 						.createNGrams(eachEntry.toLowerCase().trim(), true);
-
 				listOfNGrams.add(dataItemTokens);
 			}
-
 			Map<Integer, List<Set<String>>> nGramsMap = null;
-
 			if (nGramsMapForMeasurements.containsKey(invesigationName))
 			{
 				nGramsMap = nGramsMapForMeasurements.get(invesigationName);
@@ -1381,9 +1382,7 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 			{
 				nGramsMap = new HashMap<Integer, List<Set<String>>>();
 			}
-
 			nGramsMap.put(m.getId(), listOfNGrams);
-
 			nGramsMapForMeasurements.put(invesigationName, nGramsMap);
 			// List<Measurement> measurements = null;
 			//
@@ -1403,7 +1402,6 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 			// this.getModel().getMeasurements().put(m.getInvestigation_Name(),
 			// measurements);
 		}
-
 		this.getModel().setNGramsMapForMeasurements(nGramsMapForMeasurements);
 		// for (Entry<String, List<Measurement>> measurementsFromStudy :
 		// model.getMeasurements().entrySet())
