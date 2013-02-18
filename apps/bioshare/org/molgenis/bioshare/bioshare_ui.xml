@@ -16,7 +16,7 @@
 					<form name="computeProtocol" entity="ComputeProtocol" label="Compute protocols"	compact_view="Name,Features" hide_fields="Investigation,TargetFilter" />
 					<form name="protocol" entity="Protocol" label="Protocols"	compact_view="Name,Features" hide_fields="Investigation,TargetFilter" />
 					<form name="observationTarget" entity="ObservationTarget" label="Targets" />
-					<form name="observedValue" entity="ObservedValue" label="Values"/>
+					<form name="category" entity="ObservedValue" label="Categories"/>
 					<form name="studyDescription" entity="StudyDescription" label="Study description"/>
 				</menu>
 			</form>
@@ -27,6 +27,7 @@
 		</menu>
 		<menu name="ImportData" label="Import Data">
 			<plugin name="BiobankImporter" type="plugins.biobankimporter.BiobankImporter" label="Biobank Importer" />
+			<plugin name="Importer" type="plugins.genericwizard.GenericWizard" label="Biobank Importer" />
 		</menu>
 		<menu name="Admin">
 			<plugin name="Settings" type="plugins.system.settings.Settings" />
