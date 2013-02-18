@@ -18,6 +18,8 @@ import uk.ac.ebi.ontocat.bioportal.BioportalOntologyService;
 
 public class TermExpansionJob implements Job
 {
+	private Set<String> ontologyTerms = new HashSet<String>();
+
 	@Override
 	@SuppressWarnings("unchecked")
 	public void execute(JobExecutionContext context) throws JobExecutionException
@@ -52,11 +54,6 @@ public class TermExpansionJob implements Job
 								expandByPotentialBuildingBlocks(predictor.getLabel(), stopWords, model, os));
 					}
 
-					// for (int i = 0; i < 2000; i++)
-					// {
-					// predictor.getExpandedQuery().add(predictor.getLabel() +
-					// "_" + i);
-					// }
 					predictor.setExpandedQuery(uniqueList(predictor.getExpandedQuery()));
 					model.setTotalNumber((model.getTotalNumber() + predictor.getExpandedQuery().size())
 							* model.getSelectedValidationStudy().size());
@@ -186,24 +183,15 @@ public class TermExpansionJob implements Job
 				if (ot.getLabel() != null)
 				{
 					expandedQueries.add(ot.getLabel());
-
-					// expandedQueries.addAll(os.getDefinitions(ot));
-
 					for (String synonym : os.getSynonyms(ot))
 					{
 						expandedQueries.add(synonym);
 					}
-
 					try
 					{
 						if (os.getChildren(ot) != null)
 						{
 							recursiveAddTerms(ot, expandedQueries, os);
-							// for (uk.ac.ebi.ontocat.OntologyTerm childOt :
-							// os.getChildren(ot))
-							// {
-							// expandedQueries.add(childOt.getLabel());
-							// }
 						}
 					}
 					catch (Exception e)
@@ -213,7 +201,7 @@ public class TermExpansionJob implements Job
 				}
 			}
 		}
-
+		ontologyTerms.addAll(expandedQueries);
 		return uniqueList(expandedQueries);
 	}
 
