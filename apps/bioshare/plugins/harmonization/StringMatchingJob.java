@@ -22,7 +22,7 @@ public class StringMatchingJob implements StatefulJob
 		{
 			PredictorInfo predictor = (PredictorInfo) context.getJobDetail().getJobDataMap().get("predictor");
 
-			HarmonizationModel dataModel = (HarmonizationModel) context.getJobDetail().getJobDataMap().get("model");
+			HarmonizationModel model = (HarmonizationModel) context.getJobDetail().getJobDataMap().get("model");
 
 			NGramMatchingModel matchingModel = (NGramMatchingModel) context.getJobDetail().getJobDataMap()
 					.get("matchingModel");
@@ -31,7 +31,7 @@ public class StringMatchingJob implements StatefulJob
 
 			Map<String, MappingList> mappingsForStudies = new HashMap<String, MappingList>();
 
-			for (Entry<String, Map<Integer, List<Set<String>>>> entry : dataModel.getnGramsMapForMeasurements()
+			for (Entry<String, Map<Integer, List<Set<String>>>> entry : model.getnGramsMapForMeasurements()
 					.entrySet())
 			{
 				String investigationName = entry.getKey();
@@ -40,13 +40,13 @@ public class StringMatchingJob implements StatefulJob
 				for (String eachQuery : predictor.getExpandedQuery())
 				{
 					executeMapping(matchingModel, eachQuery, mappingList, entry.getValue());
-					dataModel.incrementFinishedQueries();
+					model.incrementFinishedQueries();
 				}
 
 				mappingsForStudies.put(investigationName, mappingList);
 			}
 
-			dataModel.incrementFinishedJob();
+			model.incrementFinishedJob();
 			predictor.setMappings(mappingsForStudies);
 		}
 		catch (Exception e)
@@ -62,16 +62,16 @@ public class StringMatchingJob implements StatefulJob
 
 		for (Integer featureID : measurementMap.keySet())
 		{
-			double highScore = 0;
+			// double highScore = 0;
 
 			for (Set<String> eachNGrams : measurementMap.get(featureID))
 			{
 				double similarity = matchingModel.calculateScore(eachNGrams, tokens);
 
-				if (highScore < similarity) highScore = similarity;
+				mappingList.add(eachQuery, featureID, similarity);
 			}
 
-			mappingList.add(eachQuery, featureID, highScore);
+			// mappingList.add(eachQuery, featureID, highScore);
 		}
 	}
 }
