@@ -81,13 +81,9 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 	public String getCustomHtmlHeaders()
 	{
 		StringBuilder s = new StringBuilder();
-
 		s.append("<link rel=\"stylesheet\" href=\"bootstrap/css/bootstrap.min.css\" type=\"text/css\" />");
-
 		s.append("<link rel=\"stylesheet\" href=\"bootstrap/css/bootstrap.css\" type=\"text/css\" />");
-
 		s.append("<script type=\"text/javascript\" src=\"bootstrap/js/bootstrap.min.js\"></script>");
-
 		return s.toString();
 	}
 
@@ -243,10 +239,12 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 					predictorID = predictorID.replaceAll(inv.getId() + "_", "");
 					String matchedVariable = request.getString("matchedVariable");
 					String identifier = request.getString("identifier").replaceAll(predictorID + "_", "");
+					List<Measurement> measurements = db.find(Measurement.class, new QueryRule(Measurement.ID,
+							Operator.EQUALS, Integer.parseInt(identifier)));
 
 					String table = retrieveExpandedQuery(
 							this.getModel().getPredictors().get(Integer.parseInt(predictorID)),
-							Integer.parseInt(identifier), matchedVariable);
+							(measurements.size() > 0 ? measurements.get(0) : null), matchedVariable);
 
 					status.put("table", table);
 				}
@@ -648,27 +646,31 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 		}
 	}
 
-	private String retrieveExpandedQuery(PredictorInfo predictorInfo, Integer featureID, String matchedVariable)
+	private String retrieveExpandedQuery(PredictorInfo predictorInfo, Measurement feature, String matchedVariable)
 	{
 		StringBuilder table = new StringBuilder();
 
-		table.append("<div id=\"expandedQueryTable\" class=\"modal hide fade\">")
-				.append("<div class=\"modal-header\">Expanded query for ")
-				.append(predictorInfo.getLabel())
-				.append("</div>")
-				.append("<div class=\"modal-body\">")
-				.append("<table class=\"table table-striped\" style=\"width:100%;overflow:auto;\">")
-				.append("<tr style=\"font-size:12px;\"><th style=\"width:40%\">Expanded queries</th>")
-				.append("<th style=\"width:30%\">Matched variable</th><th style=\"width:30%\">Similarity score</th></tr>");
-
-		for (String query : predictorInfo.getExpandedQueryForOneMapping(featureID))
+		if (feature != null)
 		{
-			table.append("<tr style=\"font-size:12px;text-align:center;\"><td>").append(query).append("</td><td>")
-					.append(matchedVariable).append("</td><td>").append(predictorInfo.getSimilarity(featureID, query))
-					.append("</td></tr>");
+			table.append("<div id=\"expandedQueryTable\" class=\"modal hide fade\">")
+					.append("<div class=\"modal-header\">Expanded query for ").append(predictorInfo.getLabel())
+					.append("</div>").append("<div class=\"modal-body\">")
+					.append("<table class=\"table table-striped\" style=\"width:100%;overflow:auto;\">")
+					.append("<tr style=\"font-size:12px;\"><th style=\"width:30%\">Expanded queries</th>")
+					.append("<th style=\"width:20%\">Matched variable</th>")
+					.append("<th style=\"width:30%\">Description</th>")
+					.append("<th style=\"width:20%\">Similarity score</th></tr>");
+
+			for (String query : predictorInfo.getExpandedQueryForOneMapping(feature.getId()))
+			{
+				table.append("<tr style=\"font-size:12px;text-align:center;\"><td>").append(query).append("</td><td>")
+						.append(matchedVariable).append("</td><td>").append(feature.getDescription())
+						.append("</td><td>").append(predictorInfo.getSimilarity(feature.getId(), query))
+						.append(" %</td></tr>");
+			}
+			table.append("</table></div>").append("<div class=\"modal-footer\">")
+					.append("<button class=\"btn\" data-dismiss=\"modal\" aria-hidden=\"true\">Close</button><div>");
 		}
-		table.append("</table></div>").append("<div class=\"modal-footer\">")
-				.append("<button class=\"btn\" data-dismiss=\"modal\" aria-hidden=\"true\">Close</button><div>");
 
 		return table.toString();
 	}
@@ -681,14 +683,13 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 		{
 			Integer predictorID = predictor.getId();
 
-			table.append("<table id=\"")
-					.append(inv.getId())
-					.append("_")
-					.append(predictor.getId())
+			table.append("<table id=\"").append(inv.getId()).append("_").append(predictor.getId())
 					.append("\" style=\"display:none;position:relative;top:5px;width:100%;overflow:auto;\"")
 					.append(" class=\"table table-striped table-hover\">")
 					.append("<tr style=\"font-size:12px;\"><th style=\"width:30%;text-align:center\">Mapped varaibles")
-					.append("</th><th style=\"width:50%;text-align:center\">Description</th><th style=\"width:20%;text-align:center\">Select mapping</th></tr>");
+					.append("</th><th style=\"width:50%;text-align:center\">Description</th>")
+					.append("<th style=\"width:20%;text-align:center\">Similarity score</th></tr>");
+			// .append("<th style=\"width:20%;text-align:center\">Select mapping</th></tr>");
 
 			List<Measurement> mappedMeasurements = db.find(Measurement.class, new QueryRule(Measurement.ID,
 					Operator.IN, predictor.getMappedVariableIDs()));
@@ -703,21 +704,32 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 
 					String description = measurement.getDescription();
 
+					String topQuery = null;
+
+					double similarityScore = 0;
+
+					if (predictor.getExpandedQueryForOneMapping(measurement.getId()).size() > 0)
+					{
+						topQuery = predictor.getExpandedQueryForOneMapping(measurement.getId()).get(0);
+						similarityScore = predictor.getSimilarity(measurement.getId(), topQuery);
+					}
+
 					StringBuilder identifier = new StringBuilder();
 
 					identifier.append(predictorID).append("_").append(measurement.getId());
 
 					eachRow.append("<tr id=\"" + identifier.toString().replaceAll(" ", "_"))
-							.append("_row\" style=\"font-size:12px;\"><td style=\"text-align:center;\"><span>")
+							.append("_row\" style=\"font-size:12px;\"><td style=\"text-align:center;\"><span style=\"cursor:pointer;\">")
 							.append(measurement.getName())
 							.append("</span><div id=\"")
 							.append(identifier.toString().replaceAll(" ", "_"))
 							.append("_details\" style=\"cursor:pointer;height:18px;width:18px;float:right;margin-right:10px;\" ")
 							.append("class=\"ui-state-default ui-corner-all\" title=\"Check expanded queries\">")
 							.append("<span class=\"ui-icon ui-icon-plus\"></span></div></td><td style=\"text-align:center;\">")
-							.append(description)
-							.append("</td><td style=\"text-align:center;\"><input type=\"checkbox\" id=\"")
-							.append(identifier).append("_checkBox\" /></td></tr>");
+							.append(description).append("</td><td style=\"text-align:center;\">")
+							.append(similarityScore).append(" %</td></tr>");
+					// .append("</td><td style=\"text-align:center;\"><input type=\"checkbox\" id=\"")
+					// .append(identifier).append("_checkBox\" /></td></tr>");
 
 					sortingMap.put(measurement.getId(), eachRow.toString());
 				}
@@ -778,31 +790,18 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 		if (this.getModel().getValidationStudies().size() > 0)
 		{
 			this.getModel().setOs(new BioportalOntologyService());
-
 			this.getModel().setMatchingModel(new NGramMatchingModel(3));
-
 			this.collectExistingMapping(db, request);
-
 			this.getModel().setIsStringMatching(false);
-
 			this.getModel().setTotalJobs(this.getModel().getPredictors().size());
-
 			this.getModel().setTotalNumber(0);
-
 			this.getModel().setInitialFinishedJob(0);
-
 			this.getModel().setInitialFinishedQueries(0);
-
 			this.getModel().setStartTime(System.currentTimeMillis());
-
 			Properties prop = new Properties();
-
 			prop.setProperty("org.quartz.threadPool.class", "org.quartz.simpl.SimpleThreadPool");
-
 			prop.setProperty("org.quartz.threadPool.threadCount", "4");
-
 			this.getModel().setScheduler(new StdSchedulerFactory(prop).getScheduler());
-
 			this.getModel().getScheduler().start();
 		}
 
