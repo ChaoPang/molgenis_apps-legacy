@@ -534,6 +534,7 @@ function populateRowInTable(data, url)
 		{
 			$('#overviewTable').parents('div').eq(0).width("100%").find('tr').children().show();
 			$("input[name=\"selectedVariableID\"]").val(null);
+			$('#variableDetail').empty();
 		});
 		
 		$('#matchSelectedVariable').click(function(){
