@@ -45,7 +45,6 @@ public class ComputeBundleFromDirectory extends ComputeBundle
 		// the system protocols
 		// If a protocol is loaded twice, then only keep first one
 		// only use system protocols if they are not in protocols folder
-		this.keepFirstProtocol();
 		this.setComputeParameters(options.parametersfile);
 		this.setWorksheet(options.worksheetfile);
 
@@ -230,7 +229,8 @@ public class ComputeBundleFromDirectory extends ComputeBundle
 				protocols.add(p);
 			}
 		}
-		this.setComputeProtocols(protocols);
+
+		this.appendComputeProtocols(protocols);
 	}
 
 	public void setComputeParameters(File file) throws Exception
