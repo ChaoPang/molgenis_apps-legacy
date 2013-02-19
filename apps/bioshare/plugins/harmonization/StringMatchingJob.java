@@ -48,14 +48,14 @@ public class StringMatchingJob implements StatefulJob
 	private void executeMapping(NGramMatchingModel matchingModel, Entry<String, String> eachQueryEntry,
 			MappingList mappingList, Map<Integer, List<Set<String>>> measurementMap) throws Exception
 	{
-		Set<String> tokens = matchingModel.createNGrams(eachQueryEntry.getKey().toLowerCase().trim(), true);
+		Set<String> tokens = matchingModel.createNGrams(
+				eachQueryEntry.getKey().toLowerCase().trim().replaceAll("[^a-zA-Z ]", ""), true);
 
 		for (Integer featureID : measurementMap.keySet())
 		{
 			for (Set<String> eachNGrams : measurementMap.get(featureID))
 			{
 				double similarity = matchingModel.calculateScore(eachNGrams, tokens);
-
 				mappingList.add(eachQueryEntry.getValue(), featureID, similarity);
 			}
 		}
