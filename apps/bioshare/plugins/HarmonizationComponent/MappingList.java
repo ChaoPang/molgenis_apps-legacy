@@ -10,31 +10,17 @@ public class MappingList
 {
 	private Map<ExpandedQueryObject, Double> uniqueElements = new HashMap<ExpandedQueryObject, Double>();
 
-	// private Map<ExpandedQueryObject, LinkedInformation> uniqueElements = new
-	// HashMap<ExpandedQueryObject, LinkedInformation>();
-
 	public void add(String expandedQuery, Integer featureID, double similarity) throws Exception
 	{
 		if (expandedQuery == null || featureID == null) throw new Exception("Parameters have to be not null!");
-
 		if (expandedQuery.isEmpty()) throw new Exception("Parameters have to be not empty");
-
 		ExpandedQueryObject uniqueMapping = new ExpandedQueryObject(expandedQuery, featureID);
-
 		if (uniqueElements.containsKey(uniqueMapping))
 		{
-			if (similarity > uniqueElements.get(uniqueMapping))
-			{
-				uniqueElements.put(uniqueMapping, similarity);
-			}
+			if (similarity > uniqueElements.get(uniqueMapping)) uniqueElements.put(uniqueMapping, similarity);
 		}
 		else
-		{
-			// LinkedInformation inf = new LinkedInformation(expandedQuery,
-			// matchedItem, similarity, measurementName);
-
 			uniqueElements.put(uniqueMapping, similarity);
-		}
 	}
 
 	public List<LinkedInformation> getSortedInformation()
@@ -46,34 +32,10 @@ public class MappingList
 			sortedLinks.add(new LinkedInformation(entry.getKey().getExpandedQuery(), entry.getKey().getFeatureID(),
 					entry.getValue()));
 		}
-
 		Collections.sort(sortedLinks);
-
-		return (sortedLinks.size() > 100 ? sortedLinks.subList(sortedLinks.size() - 100, sortedLinks.size())
+		return (sortedLinks.size() > 1000 ? sortedLinks.subList(sortedLinks.size() - 1000, sortedLinks.size())
 				: sortedLinks);
 	}
-
-	// private static class SimilarityRecord
-	// {
-	// private final String matchedItem;
-	// private double similarity;
-	//
-	// public SimilarityRecord(String matchedItem, double similarity)
-	// {
-	// this.matchedItem = matchedItem;
-	// this.setSimilarity(similarity);
-	// }
-	//
-	// public double getSimilarity()
-	// {
-	// return similarity;
-	// }
-	//
-	// public void setSimilarity(double similarity)
-	// {
-	// this.similarity = similarity;
-	// }
-	// }
 
 	private static class ExpandedQueryObject
 	{
