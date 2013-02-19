@@ -72,7 +72,9 @@ function retrieveResult(url)
 		});
 		
 		$('#mappingResult tr td:first-child').each(function(){
-			$(this).children('span:eq(0)').click(function(){
+			$(this).children('span:eq(0)').tooltip({
+				title : 'click to check the variable'
+			}).click(function(){
 				var identifier = $(this).parents('tr:eq(0)').attr('id');
 				getFeatureInfo(identifier, url);
 			});

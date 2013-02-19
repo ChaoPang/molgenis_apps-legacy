@@ -602,9 +602,9 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 					StringBuilder identifier = new StringBuilder();
 					identifier.append(predictorID).append("_").append(measurement.getId());
 					eachRow.append("<tr id=\"" + identifier.toString().replaceAll(" ", "_"))
-							.append("_row\" style=\"font-size:12px;\"><td style=\"text-align:center;\"><span style=\"cursor:pointer;\">")
-							.append(measurement.getName()).append("</span><div id=\"")
-							.append(identifier.toString().replaceAll(" ", "_"))
+							.append("_row\" style=\"font-size:12px;\"><td style=\"text-align:center;\">")
+							.append("<span style=\"cursor:pointer;\">").append(measurement.getName())
+							.append("</span><div id=\"").append(identifier.toString().replaceAll(" ", "_"))
 							.append("_details\" style=\"cursor:pointer;float:right;margin-top:3px;\" ")
 							.append("class=\"icon-plus\" title=\"Check expanded queries\">")
 							.append("<span class=\"ui-icon-plus\"></span></div></td><td style=\"text-align:center;\">")
