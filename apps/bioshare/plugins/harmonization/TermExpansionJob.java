@@ -124,17 +124,21 @@ public class TermExpansionJob implements Job
 			{
 				if (count > 0) break;
 				lastKey = entry.getKey();
+
 				if (entry.getValue().size() == 0)
 				{
 					StringBuilder matchedString = new StringBuilder();
+					StringBuilder displayedString = new StringBuilder();
 					if (combinedLists.size() == 0) combinedLists.put(entry.getKey(), entry.getKey());
 					else
 					{
 						for (Entry<String, String> mapEntry : combinedLists.entrySet())
 						{
 							matchedString.delete(0, matchedString.length());
+							displayedString.delete(0, displayedString.length());
 							matchedString.append(mapEntry.getKey()).append(' ').append(lastKey);
-							newCombinedLists.put(matchedString.toString(), matchedString.toString());
+							displayedString.append(mapEntry.getValue()).append(' ').append(lastKey);
+							newCombinedLists.put(matchedString.toString(), displayedString.toString());
 						}
 					}
 				}
