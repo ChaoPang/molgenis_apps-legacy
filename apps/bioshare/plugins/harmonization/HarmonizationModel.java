@@ -12,7 +12,6 @@ import org.molgenis.framework.ui.EasyPluginModel;
 import org.quartz.Scheduler;
 
 import plugins.HarmonizationComponent.NGramMatchingModel;
-import plugins.catalogueTreeNewVersion.catalogueTreeComponent;
 import uk.ac.ebi.ontocat.bioportal.BioportalOntologyService;
 
 public class HarmonizationModel extends EasyPluginModel
@@ -30,16 +29,15 @@ public class HarmonizationModel extends EasyPluginModel
 	private Scheduler scheduler = null;
 	private BioportalOntologyService os = null;
 	private NGramMatchingModel model = null;
-	private catalogueTreeComponent catalogue = null;
 	private List<String> selectedValidationStudy = null;
 	private List<String> predictionModels = new ArrayList<String>();
 	private List<String> validationStudies = new ArrayList<String>();
 	private List<String> reservedInv = new ArrayList<String>();
-	private Map<Integer, PredictorInfo> predictors = new HashMap<Integer, PredictorInfo>();
+	private Map<Integer, PredictorInfo> predictors = null;
 	// private String[] ontologies = { "1351", "1136", "1353", "2018", "1032" };
 	private String[] ontologies =
-	{ "1353", "1032", "1427" };
-	// "1032", "1427",
+	// { "1353", "1032", "1427" };
+	{ "1353", "1032" };
 	private List<String> ontologyAccessions = Arrays.asList(ontologies);
 	private String freeMakerTemplate = "Harmonization.ftl";
 	private int totalJobs = 0;
@@ -48,7 +46,7 @@ public class HarmonizationModel extends EasyPluginModel
 	private String processedTime = "";
 	private boolean isStringMatching = false;
 	private Map<String, OntologyTermContainer> cachedOntologyTerms = null;
-	private Map<String, Map<Integer, List<Set<String>>>> nGramsMapForMeasurements;
+	private Map<String, Map<Integer, List<Set<String>>>> nGramsMapForMeasurements = null;
 
 	public HarmonizationModel(Harmonization controller)
 	{
@@ -114,16 +112,6 @@ public class HarmonizationModel extends EasyPluginModel
 	public void setMatchingModel(NGramMatchingModel model)
 	{
 		this.model = model;
-	}
-
-	public catalogueTreeComponent getCatalogue()
-	{
-		return catalogue;
-	}
-
-	public void setCatalogue(catalogueTreeComponent catalogue)
-	{
-		this.catalogue = catalogue;
 	}
 
 	public List<String> getValidationStudies()
