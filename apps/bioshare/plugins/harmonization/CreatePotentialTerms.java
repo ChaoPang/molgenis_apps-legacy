@@ -4,22 +4,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class Terms
+public class CreatePotentialTerms
 {
 	/*
 	 * Given a list 'start' with tokens (a predictor). Return all possible
 	 * different lists in which the tokens appear in the same order, possibly
 	 * concatenated. Each list can be considered as a set of 'building blocks'.
 	 */
-	public static ArrayList<List<String>> getTermsLists(List<String> start)
+	public static List<List<String>> getTermsLists(List<String> start)
 	{
-		ArrayList<List<String>> result = new ArrayList<List<String>>();
+		List<List<String>> result = new ArrayList<List<String>>();
 
 		if (0 < start.size())
 		{
 			for (int pos = 0; pos < start.size(); pos++)
 			{
-				ArrayList<String> left = asOneElement(start.subList(0, pos + 1));
+				List<String> left = asOneElement(start.subList(0, pos + 1));
 
 				result.addAll(combine(left, getTermsLists(start.subList(pos + 1, start.size()))));
 			}
@@ -32,7 +32,7 @@ public class Terms
 	 * Concatenate all list elements to one string. Return a list which has only
 	 * one element: that string.
 	 */
-	private static ArrayList<String> asOneElement(List<String> list)
+	private static List<String> asOneElement(List<String> list)
 	{
 		String result = "";
 
@@ -46,7 +46,7 @@ public class Terms
 	 * If termsLists empty, then return a list with only prefix in it. Else
 	 * prepend prefix to each element in termsLists, and return the result.
 	 */
-	private static ArrayList<List<String>> combine(ArrayList<String> prefix, ArrayList<List<String>> termsLists)
+	private static List<List<String>> combine(List<String> prefix, List<List<String>> termsLists)
 	{
 		ArrayList<List<String>> result = new ArrayList<List<String>>();
 
