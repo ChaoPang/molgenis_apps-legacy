@@ -58,7 +58,7 @@ public class NGramMatchingModel
 				"until", "up", "very", "was", "wasn't", "we", "we'd", "we'll", "we're", "we've", "were", "weren't",
 				"what", "what's", "when", "when's", "where", "where's", "which", "while", "who", "who's", "whom",
 				"why", "why's", "with", "won't", "would", "wouldn't", "you", "you'd", "you'll", "you're", "you've",
-				"your", "yours", "yourself", "yourselves", "many"));
+				"your", "yours", "yourself", "yourselves", "many", ")", "("));
 	}
 
 	public NGramMatchingModel()
@@ -82,16 +82,11 @@ public class NGramMatchingModel
 	public List<String> removeStopWords(Set<String> listOfWords)
 	{
 		List<String> removedStopWordsList = null;
-
 		for (String eachWord : listOfWords)
 		{
 			if (!STOPWORDSLIST.contains(eachWord))
 			{
-				if (removedStopWordsList == null)
-				{
-					removedStopWordsList = new ArrayList<String>();
-				}
-
+				if (removedStopWordsList == null) removedStopWordsList = new ArrayList<String>();
 				removedStopWordsList.add(eachWord);
 			}
 		}
@@ -108,37 +103,22 @@ public class NGramMatchingModel
 	public Set<String> createNGrams(String inputQuery, boolean removeStopWords)
 	{
 		Set<String> wordsInString = new HashSet<String>(Arrays.asList(inputQuery.split(" ")));
-
 		Set<String> tokens = new HashSet<String>();
-
 		wordsInString.removeAll(STOPWORDSLIST);
-
 		// Padding the string
 		for (String singleWord : wordsInString)
 		{
 			// The s$ will be the produced from two words.
 			StringBuilder singleString = new StringBuilder(singleWord.length() + 2);
-
 			singleString.append('^').append(singleWord.toLowerCase()).append('$');
-
 			int length = singleString.length();
-
 			for (int i = 0; i < length; i++)
 			{
-				if (i + nGrams < length)
-				{
-					tokens.add(singleString.substring(i, i + nGrams));
-				}
-				else
-				{
-					if (!tokens.contains(singleString.substring(length - 2)))
-					{
-						tokens.add(singleString.substring(length - 2));
-					}
-				}
+				if (i + nGrams < length) tokens.add(singleString.substring(i, i + nGrams));
+				else if (!tokens.contains(singleString.substring(length - 2))) tokens.add(singleString
+						.substring(length - 2));
 			}
 		}
-
 		return tokens;
 	}
 
@@ -152,24 +132,16 @@ public class NGramMatchingModel
 	public double calculateScore(Set<String> inputStringTokens, Set<String> ontologyTermTokens)
 	{
 		int matchedTokens = 0;
-
 		double similarity = 0;
-
 		// TODO improve it in the future, any intersect method?????
 		for (String eachToken : inputStringTokens)
 		{
-			if (ontologyTermTokens.contains(eachToken))
-			{
-				matchedTokens++;
-			}
+			if (ontologyTermTokens.contains(eachToken)) matchedTokens++;
 		}
 
 		double totalToken = Math.max(inputStringTokens.size(), ontologyTermTokens.size());
-
 		similarity = matchedTokens / totalToken * 100;
-
 		DecimalFormat df = new DecimalFormat("#0.000");
-
 		return Double.parseDouble(df.format(similarity));
 	}
 
