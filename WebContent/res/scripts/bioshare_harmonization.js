@@ -317,11 +317,13 @@ function getFeatureInfo(identifier, url){
 	}).done(function(status){
 		var table = $('<table />').attr('class','table table-striped');
 		table.append('<tr><th>Name</th><td>' + status.name + '</td></tr>');
-		table.append('<tr><th>Label</th><td>' + status.label + '</td></tr>');
-		table.append('<tr><th>Description</th><td>' + status.description + '</td></tr>');
+		if(status.label !== undefined)
+			table.append('<tr><th>Label</th><td>' + status.label + '</td></tr>');
+		if(status.description !== undefined)
+			table.append('<tr><th>Description</th><td>' + status.description + '</td></tr>');
 		table.append('<tr><th>Data type</th><td>' + status.dataType + '</td></tr>');
 		var categories = status.categories;
-		if(categories !== null){
+		if(categories !== undefined){
 			var showCategories = '';
 			for(var i = 0; i < categories.length; i++){
 				var eachCategory = categories[i];
