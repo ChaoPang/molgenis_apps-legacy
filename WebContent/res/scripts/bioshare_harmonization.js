@@ -4,17 +4,11 @@ function monitorJobs(url)
 		url : url + "&__action=download_json_monitorJobs",
 		async: false,
 	}).done(function(status){
-
 		$('#processedTime').text("");
-
 		$('#estimatedTime').text("");
-
 		percentage = 0;
-
 		processedTime = (status["currentTime"] - status["startTime"])/1000;
-
 		estimatedTimeString = "calculating...";
-
 		if(status["totalQuery"] != 0 && status["finishedQuery"] != 0)
 		{
 			percentage = status["finishedQuery"] / status["totalQuery"];
@@ -23,21 +17,14 @@ function monitorJobs(url)
 
 			estimatedTimeString = (estimatedTime/60).toFixed(0) + " mins " + (estimatedTime%60).toFixed(0) + " secs";
 		}
-
 		$('#processedTime').text((processedTime/60).toFixed(0) + " mins " + (processedTime%60).toFixed(0) + " secs");
-
 		$('#estimatedTime').text(estimatedTimeString);
-		
 		$('#jobTitle').text(status["jobTitle"]);
-
 		$('#progressBarMessage').text(" " + (percentage * 100).toFixed(2) + "%");
-
 		$('#progressBar').progressbar({value: percentage * 100});
-
 		if(status["totalQuery"] == status["finishedQuery"])
 		{
 			clearInterval(timer);
-
 			$('#resultPanel').show();
 		}			
 	});
@@ -51,46 +38,24 @@ function retrieveResult(url)
 	}).done(function(status){
 
 		$('#beforeMapping').hide();
-
 		$('#details').empty();
-
 		$('#mappingResult').empty();
-
 		$('#validatePredictors').empty();
-
 		$('#matchingSelectedPredictor').text("");
-
 		$('#afterMapping').show();
-
 		$('#matchingPredictionModel').text($('#selectPredictionModel').val());
-
-		$.each(status, function(key, Info)
-		{
-//			if(key == "treeView")
-//			{
-//				$('#browser').empty().append(status["treeView"]);
-//				
-//			}else{
-				label = Info["label"];
-
-				table = Info["mappingResult"];
-
-				existingMapping = Info["existingMapping"];
-
-				$('#mappingResult').append(table);
-
-				$('#existingMappings').append(existingMapping);
-
-				$('#validatePredictors').append("<option style=\"cursor:pointer;font-family:Verdana,Arial,sans-serif;\">" + label + "</option>");
-				
-				$('#validatePredictors option:last-child').data('table_ID', Info["table_ID"]);
-//			}
+		$.each(status, function(key, Info){
+			label = Info["label"];
+			table = Info["mappingResult"];
+			existingMapping = Info["existingMapping"];
+			$('#mappingResult').append(table);
+			$('#existingMappings').append(existingMapping);
+			$('#validatePredictors').append("<option style=\"cursor:pointer;font-family:Verdana,Arial,sans-serif;\">" + label + "</option>");
+			$('#validatePredictors option:last-child').data('table_ID', Info["table_ID"]);
 		});
 		
 		$('#matchingSelectedPredictor').text($('#validatePredictors option:eq(0)').text());
-		
-		$('#validatePredictors option').each(function()
-		{
+		$('#validatePredictors option').each(function(){
 			$(this).hover(
 				function(){
 					$(this).css({
@@ -107,51 +72,37 @@ function retrieveResult(url)
 		});
 		
 		$('#mappingResult tr td:first-child').each(function(){
-
-			identifier = $(this).parent().attr('id').replace("_row", "_details");
-			
-			$('#' + identifier).click(function()
-			{
-				predictor = $(this).parents('table').eq(0).attr('id').replace("mapping_","");
-				
+			$(this).children('span:eq(0)').click(function(){
+				var identifier = $(this).parents('tr:eq(0)').attr('id');
+				getFeatureInfo(identifier, url);
+			});
+			var identifier = $(this).parent().attr('id').replace("_row", "_details");			
+			$('#' + identifier).click(function(){
+				var predictor = $(this).parents('table').eq(0).attr('id').replace("mapping_","");
 				retrieveExpandedQueries(predictor, $(this), url);
 			});	
 		});
 
-		$('#validatePredictors').change(function()
-		{
+		$('#validatePredictors').change(function(){
 			elementOption = $(this).find('option:selected');
-			
 			$('#matchingSelectedPredictor').text(elementOption.text());
-
 			$('#mappingResult table').hide();
-
 			$('#existingMappings table').hide();
-
 			tableID = elementOption.data('table_ID');
-
 			$('#' + tableID).show();
 		});
 
-		$('#existingMappings tr td:last-child >div').each(function()
-		{
+		$('#existingMappings tr td:last-child >div').each(function(){
 			$(this).click(function(){
 				removeSingleMapping($(this), url);
 			});
-
 			span = $(this).parents('tr').eq(0).find('td >span');
-
 			measurementName = $(span).text();
-
 			$(span).click(function(){
 				trackInTree($(this).text(), url);
 			});
 		});
-		
-//		initializeTree(url);
-
 		$('#validatePredictors option:first-child').attr('selected', true).click();
-
 		$('#mappingResult table:first-child').show();
 	});
 }
@@ -356,8 +307,59 @@ function saveMapping(mappings, url)
 	destroyScreenMessage();
 }
 
-function retrieveExpandedQueries(predictor, matchedVariable, url)
-{	
+function getFeatureInfo(identifier, url){
+	$.ajax({
+		url : url + "&__action=download_json_getFeatureInfo",
+		data : {
+			"id" : identifier,
+		},
+		async : false,
+	}).done(function(status){
+		var table = $('<table />').attr('class','table table-striped');
+		table.append('<tr><th>Name</th><td>' + status.name + '</td></tr>');
+		table.append('<tr><th>Label</th><td>' + status.label + '</td></tr>');
+		table.append('<tr><th>Description</th><td>' + status.description + '</td></tr>');
+		table.append('<tr><th>Data type</th><td>' + status.dataType + '</td></tr>');
+		var categories = status.categories;
+		if(categories !== null){
+			var showCategories = '';
+			for(var i = 0; i < categories.length; i++){
+				var eachCategory = categories[i];
+				showCategories += eachCategory.codeString + ' = ' + eachCategory.description;
+				if(i < categories.length - 1)
+					showCategories += '</br>';
+			}
+			table.append('<tr><th>Categories</th><td>' + showCategories + '</td></tr>');
+		}
+		addElementToModal('showFeatureInfo', 'Variable information', table);
+	});
+}
+
+function addElementToModal(modalId, modalTitle, insertedElement){
+	if($('#' + modalId))
+		$('#' + modalId).remove();
+	var row = $('<div />').attr({
+		'id' : modalId,
+		'class' : 'modal show'
+	});
+	var header = $('<div />').attr('class', 'modal-header');
+	$('<h3 />').text(modalTitle).appendTo(header);
+	var footer = $('<div />').attr('class', 'modal-footer');
+	$('<button />').attr({
+		 'class' : 'btn', 
+		 'data-dismiss' : 'modal',
+		 'aria-hidden' : 'true'
+	}).text('Close').appendTo(footer);
+	var body = $('<div />').attr('class', 'modal-body');
+	insertedElement.appendTo(body);
+	header.appendTo(row);
+	body.appendTo(row);
+	footer.appendTo(row);
+	row.appendTo('body');
+	$('#' + modalId).modal('show');
+}
+
+function retrieveExpandedQueries(predictor, matchedVariable, url){	
 	$.ajax({
 		url : url + "&__action=download_json_retrieveExpandedQuery",
 		data : {
@@ -396,36 +398,28 @@ function getOntologyTerm(element, url){
 		var label = status.label;
 		var listOfDefinitions = status.ontologyTermDefinition;
 		var listOfSynonyms = status.synonyms;
-		var table = $('<table />').attr('class','table table-bordered');
-		table.append('<tr><th>Ontology term ID</th><td>' + ontologyTermID + '</td></tr>');
+		var table = $('<table />').attr('class','table table-striped');
+		table.append('<tr><th>ID</th><td><a href="' + ontologyTermID + '" target="_blank">' + ontologyTermID + '</a></td></tr>');
 		table.append('<tr><th>Label</th><td>' + label + '</td></tr>');
-		if(listOfDefinitions !== null)
-			table.append('<tr><th>Definitions</th><td>' + listOfDefinitions[0] + '</td></tr>');
-		if(listOfSynonyms !== null)
-			table.append('<tr><th>Synonyms</th><td>' + listOfSynonyms[0] + '</td></tr>');
-		
-		if($('#showOntologyTerm')){
-			$('#showOntologyTerm').remove();
+		if(listOfDefinitions !== null){
+			var definitions = "";
+			for(var i = 0; i < listOfDefinitions.length; i++){
+				definitions += listOfDefinitions[i];
+				if(i < listOfDefinitions.length - 1)
+					definitions += "</br>";
+			}
+			table.append('<tr><th>Definitions</th><td>' + definitions + '</td></tr>');
 		}
-		var row = $('<div />').attr({
-			'id' : 'showOntologyTerm',
-			'class' : 'modal show'
-		});
-		var header = $('<div />').attr('class', 'modal-header');
-		$('<h3 />').text('Ontology term').appendTo(header);
-		var footer = $('<div />').attr('class', 'modal-footer');
-		$('<button />').attr({
-			 'class' : 'btn', 
-			 'data-dismiss' : 'modal',
-			 'aria-hidden' : 'true'
-		}).text('Close').appendTo(footer);
-		var body = $('<div />').attr('class', 'modal-body');
-		table.appendTo(body);
-		header.appendTo(row);
-		body.appendTo(row);
-		footer.appendTo(row);
-		row.appendTo('body');
-		$('#showOntologyTerm').modal('show');
+		if(listOfSynonyms !== null){
+			var synonyms = "";
+			for(var i = 0; i < listOfSynonyms.length; i++){
+				synonyms += listOfSynonyms[i];
+				if(i < listOfSynonyms.length - 1)
+					synonyms += "</br>";
+			}
+			table.append('<tr><th>Synonyms</th><td>' + synonyms + '</td></tr>');
+		}
+		addElementToModal('showOntologyTerm', 'Ontology term', table);
 	});
 }
 
