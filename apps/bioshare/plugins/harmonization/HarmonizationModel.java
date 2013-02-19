@@ -36,8 +36,7 @@ public class HarmonizationModel extends EasyPluginModel
 	private Map<Integer, PredictorInfo> predictors = null;
 	// private String[] ontologies = { "1351", "1136", "1353", "2018", "1032" };
 	private String[] ontologies =
-	// { "1353", "1032", "1427" };
-	{ "1353", "1032" };
+	{ "1353", "1032", "1427" };
 	private List<String> ontologyAccessions = Arrays.asList(ontologies);
 	private String freeMakerTemplate = "Harmonization.ftl";
 	private int totalJobs = 0;
