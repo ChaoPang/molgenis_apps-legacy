@@ -10,11 +10,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
-import uk.ac.ebi.ontocat.OntologyService;
 import uk.ac.ebi.ontocat.OntologyService.SearchOptions;
 import uk.ac.ebi.ontocat.OntologyServiceException;
 import uk.ac.ebi.ontocat.bioportal.BioportalOntologyService;
@@ -52,10 +52,7 @@ public class TermExpansionJob implements Job
 						predictor.getExpandedQuery().putAll(
 								expandByPotentialBuildingBlocks(predictor.getLabel(), stopWords, model, os));
 					}
-
 					predictor.getExpandedQuery().put(predictor.getLabel(), predictor.getLabel());
-
-					// predictor.setExpandedQuery(uniqueList(predictor.getExpandedQuery()));
 					model.setTotalNumber((model.getTotalNumber() + predictor.getExpandedQuery().size())
 							* model.getSelectedValidationStudy().size());
 					count++;
@@ -76,7 +73,8 @@ public class TermExpansionJob implements Job
 			HarmonizationModel model, BioportalOntologyService os) throws OntologyServiceException
 	{
 		Map<String, String> expandedQueries = new HashMap<String, String>();
-		List<List<String>> potentialBlocks = Terms.getTermsLists(Arrays.asList(predictorLabel.split(" ")));
+		List<List<String>> potentialBlocks = CreatePotentialTerms
+				.getTermsLists(Arrays.asList(predictorLabel.split(" ")));
 		Map<String, Set<OntologyTermContainer>> mapForBlocks = new LinkedHashMap<String, Set<OntologyTermContainer>>();
 		boolean possibleBlocks = false;
 
@@ -145,7 +143,6 @@ public class TermExpansionJob implements Job
 					for (OntologyTermContainer ontologyTerm : entry.getValue())
 					{
 						String ontologyTermId = ontologyTerm.getOntologyTermID();
-						String ontologyID = ontologyTerm.getOntologyID();
 						ontologyTerm.getSynonyms().add(ontologyTerm.getLabel());
 						for (String eachSynonym : ontologyTerm.getSynonyms())
 						{
@@ -154,9 +151,8 @@ public class TermExpansionJob implements Job
 							if (combinedLists.size() == 0)
 							{
 								displayedString.delete(0, displayedString.length());
-								displayedString.append("<span id=\"").append(ontologyTermId.toString()).append('-')
-										.append(ontologyID).append("\" class=\"label label-info\">")
-										.append(eachSynonym).append("</span>");
+								displayedString.append("<span id=\"").append(ontologyTermId.toString())
+										.append("\" class=\"label label-info\">").append(eachSynonym).append("</span>");
 								newCombinedLists.put(eachSynonym, displayedString.toString());
 							}
 							else
@@ -167,9 +163,8 @@ public class TermExpansionJob implements Job
 									displayedString.delete(0, displayedString.length());
 									matchedString.append(mapEntry.getKey()).append(' ').append(eachSynonym);
 									displayedString.append(mapEntry.getValue()).append(' ').append("<span id=\"")
-											.append(ontologyTermId.toString()).append('-').append(ontologyID)
-											.append("\" class=\"label label-info\">").append(eachSynonym)
-											.append("</span>");
+											.append(ontologyTermId.toString()).append("\" class=\"label label-info\">")
+											.append(eachSynonym).append("</span>");
 									newCombinedLists.put(matchedString.toString(), displayedString.toString());
 								}
 							}
@@ -185,39 +180,6 @@ public class TermExpansionJob implements Job
 		return newCombinedLists;
 	}
 
-	// public List<String> collectInfoFromOntology(String queryToExpand,
-	// HarmonizationModel model,
-	// BioportalOntologyService os) throws OntologyServiceException
-	// {
-	// List<String> expandedQueries = new ArrayList<String>();
-	// for (uk.ac.ebi.ontocat.OntologyTerm ot : os.searchAll(queryToExpand,
-	// SearchOptions.EXACT))
-	// {
-	// if (model.getOntologyAccessions().contains(ot.getOntologyAccession()))
-	// {
-	// if (ot.getLabel() != null)
-	// {
-	// expandedQueries.add(ot.getLabel());
-	// for (String synonym : os.getSynonyms(ot))
-	// {
-	// expandedQueries.add(synonym);
-	// }
-	// try
-	// {
-	// if (os.getChildren(ot) != null) recursiveAddTerms(ot, expandedQueries,
-	// os);
-	// }
-	// catch (Exception e)
-	// {
-	// System.out.println(ot.getLabel() + " does not have children!");
-	// }
-	// }
-	// }
-	// }
-	// ontologyTerms.addAll(expandedQueries);
-	// return uniqueList(expandedQueries);
-	// }
-
 	public Set<OntologyTermContainer> collectInfoFromOntology(String queryToExpand, HarmonizationModel model,
 			BioportalOntologyService os) throws OntologyServiceException
 	{
@@ -230,12 +192,10 @@ public class TermExpansionJob implements Job
 				if (ot.getLabel() != null) label = ot.getLabel();
 				List<String> definition = null;
 				if (os.getDefinitions(ot) != null) definition = os.getDefinitions(ot);
-
 				OntologyTermContainer ontologyTerm = new OntologyTermContainer(ot.getURI().toString(), definition,
 						label, ot.getOntologyAccession());
-
+				expandedQueries.add(ontologyTerm);
 				model.getCachedOntologyTerms().put(ontologyTerm.getOntologyTermID().toString(), ontologyTerm);
-
 				if (os.getSynonyms(ot) != null)
 				{
 					for (String synonym : os.getSynonyms(ot))
@@ -256,64 +216,63 @@ public class TermExpansionJob implements Job
 		return expandedQueries;
 	}
 
-	// private void recursiveAddTerms(uk.ac.ebi.ontocat.OntologyTerm ot,
-	// List<String> expandedQueries, OntologyService os)
-	// throws OntologyServiceException
-	// {
-	// for (uk.ac.ebi.ontocat.OntologyTerm childOt : os.getChildren(ot))
-	// {
-	// if (childOt.getLabel() != null)
-	// {
-	// if (!expandedQueries.contains(childOt.getLabel()))
-	// expandedQueries.add(childOt.getLabel());
-	// }
-	//
-	// if (os.getSynonyms(ot) != null)
-	// {
-	// for (String synonym : os.getSynonyms(ot))
-	// {
-	// if (!expandedQueries.contains(synonym)) expandedQueries.add(synonym);
-	// }
-	// }
-	// try
-	// {
-	// if (os.getChildren(childOt) != null) recursiveAddTerms(childOt,
-	// expandedQueries, os);
-	// }
-	// catch (Exception e)
-	// {
-	// }
-	// }
-	// }
 	private void recursiveAddTerms(uk.ac.ebi.ontocat.OntologyTerm ot, Set<OntologyTermContainer> expandedQueries,
-			HarmonizationModel model, OntologyService os) throws OntologyServiceException
+			HarmonizationModel model, BioportalOntologyService os) throws OntologyServiceException
 	{
 		for (uk.ac.ebi.ontocat.OntologyTerm childOt : os.getChildren(ot))
 		{
-			String label = null;
-			if (childOt.getLabel() != null) label = childOt.getLabel();
-			List<String> definition = null;
-			if (os.getDefinitions(childOt) != null) definition = os.getDefinitions(childOt);
-			OntologyTermContainer ontologyTerm = new OntologyTermContainer(childOt.getURI().toString(), definition,
-					label, childOt.getOntologyAccession());
-			model.getCachedOntologyTerms().put(ontologyTerm.getOntologyTermID().toString(), ontologyTerm);
-
-			if (os.getSynonyms(childOt) != null)
+			if (!containsParent(ot, childOt, os))
 			{
-				for (String synonym : os.getSynonyms(childOt))
+				String label = null;
+				if (childOt.getLabel() != null) label = childOt.getLabel();
+				List<String> definition = null;
+				if (os.getDefinitions(childOt) != null) definition = os.getDefinitions(childOt);
+				OntologyTermContainer ontologyTerm = new OntologyTermContainer(childOt.getURI().toString(), definition,
+						label, childOt.getOntologyAccession());
+				model.getCachedOntologyTerms().put(ontologyTerm.getOntologyTermID().toString(), ontologyTerm);
+				if (os.getSynonyms(childOt) != null)
 				{
-					ontologyTerm.getSynonyms().add(synonym);
+					for (String synonym : os.getSynonyms(childOt))
+					{
+						ontologyTerm.getSynonyms().add(synonym);
+					}
+				}
+				expandedQueries.add(ontologyTerm);
+				try
+				{
+					if (os.getChildren(childOt) != null) recursiveAddTerms(childOt, expandedQueries, model, os);
+				}
+				catch (Exception e)
+				{
 				}
 			}
-			expandedQueries.add(ontologyTerm);
-			try
+		}
+	}
+
+	public boolean containsParent(uk.ac.ebi.ontocat.OntologyTerm parentTerm, uk.ac.ebi.ontocat.OntologyTerm childTerm,
+			BioportalOntologyService os) throws OntologyServiceException
+	{
+		String parentLabel = (parentTerm.getLabel() == null ? StringUtils.EMPTY : parentTerm.getLabel().toLowerCase());
+		String childLabel = (childTerm.getLabel() == null ? StringUtils.EMPTY : childTerm.getLabel().toLowerCase());
+
+		if (!parentLabel.isEmpty() && !childLabel.isEmpty() && childLabel.contains(parentLabel)) return true;
+
+		List<String> synonymsForParentTerm = os.getSynonyms(parentTerm);
+		List<String> synonymsForChildTerm = os.getSynonyms(childTerm);
+
+		if (synonymsForChildTerm != null && synonymsForParentTerm != null)
+		{
+			if (!parentLabel.isEmpty()) synonymsForParentTerm.add(parentLabel);
+			if (!childLabel.isEmpty()) synonymsForChildTerm.add(childLabel);
+			for (String synonymForParentString : synonymsForParentTerm)
 			{
-				if (os.getChildren(childOt) != null) recursiveAddTerms(childOt, expandedQueries, model, os);
-			}
-			catch (Exception e)
-			{
+				for (String synonymForChildString : synonymsForChildTerm)
+				{
+					if (synonymForChildString.toLowerCase().contains(synonymForParentString.toLowerCase())) return true;
+				}
 			}
 		}
+		return false;
 	}
 
 	public List<String> uniqueList(List<String> uncleanedList)
