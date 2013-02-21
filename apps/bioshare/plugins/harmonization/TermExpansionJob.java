@@ -264,6 +264,9 @@ public class TermExpansionJob implements Job
 		List<String> synonymsForParentTerm = os.getSynonyms(parentTerm);
 		List<String> synonymsForChildTerm = os.getSynonyms(childTerm);
 
+		if (synonymsForParentTerm.size() == 0) synonymsForParentTerm = new ArrayList<String>();
+		if (synonymsForChildTerm.size() == 0) synonymsForChildTerm = new ArrayList<String>();
+
 		if (synonymsForChildTerm != null && synonymsForParentTerm != null)
 		{
 			if (!parentLabel.isEmpty()) synonymsForParentTerm.add(parentLabel);
