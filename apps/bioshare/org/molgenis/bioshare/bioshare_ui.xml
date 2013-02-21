@@ -7,7 +7,7 @@
 	<menu name="main" position="top_left" startswith="bioshareWelcomeScreen">
 
 		<plugin name="bioshareWelcomeScreen" type="plugins.welcome.bioshareWelcomeScreenPlugin" label="Welcome" />
-		<menu name="dataManagement" label="Data management" position="top_left" startswith="CatalogueTreePlugin">
+		<!-- <menu name="dataManagement" label="Data management" position="top_left" startswith="CatalogueTreePlugin">
 			<plugin name="bioshareImportWizard" type="plugins.importDataWizard.bioshareImportWizard" label="import wizard" />
 			<plugin name="CatalogueTreePlugin" type="plugins.catalogueTree.CatalogueTreePlugin" label="Search variables" />
 			<form name="investigation" entity="Investigation" label="Study details" compact_view="name,description" hide_fields="accession">
@@ -20,16 +20,16 @@
 					<form name="studyDescription" entity="StudyDescription" label="Study description"/>
 				</menu>
 			</form>
-		</menu>
+		</menu>  -->
 		<menu name="Mappings" label="Harmonization platform (ALPHA)">
 			<plugin name="Harmonization" type="plugins.harmonization.Harmonization" label="Matching parameters"/>
-			<form name="mappingmeasurement" entity="MappingMeasurement" label="mapping result" hide_fields="protocolApplication,dataType,id"/>
+			<!--<form name="mappingmeasurement" entity="MappingMeasurement" label="mapping result" hide_fields="protocolApplication,dataType,id"/> -->
 		</menu>
 		<menu name="ImportData" label="Import Data">
-			<plugin name="BiobankImporter" type="plugins.biobankimporter.BiobankImporter" label="Biobank Importer" />
 			<plugin name="Importer" type="plugins.genericwizard.GenericWizard" label="Biobank Importer" />
+			<plugin name="BiobankImporter" type="plugins.biobankimporter.BiobankImporter" label="Biobank Importer" />
 		</menu>
-		<menu name="Admin">
+		<!-- <menu name="Admin">
 			<plugin name="Settings" type="plugins.system.settings.Settings" />
 			<menu name="usermanagement" position="left" label="User management">
 				<form name="MolgenisUser" entity="MolgenisUser" label="User" />
@@ -42,6 +42,7 @@
 					type="org.molgenis.auth.service.persontouser.PersonToUser" />
 			</menu>
 		</menu>
+		 -->
 		<plugin name="UserLogin" type="org.molgenis.auth.ui.UserLogin"
 			label="Register/Login" />
 
