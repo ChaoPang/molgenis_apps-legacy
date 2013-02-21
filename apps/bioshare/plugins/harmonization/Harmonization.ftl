@@ -102,36 +102,6 @@
 			}
 		});
 		
-		$('#defineFormulaPanel').dialog({
-			autoOpen : false,
-			title : "Formula",
-			height: 300,
-        	width: 400,
-        	modal: true,
-        	buttons: {
-                Update: function(){
-                	defineFormula(URL);
-                },
-                Cancel: function() {
-                    $( this ).dialog( "close" );
-                }
-        	},
-		});
-		
-		$('#defineFormula').click(function(){
-			try
-			{
-				$('#defineFormulaPanel').dialog('open');
-			}
-			catch(err)
-			{
-				$('#defineFormulaPanel').parent().css({
-					left : 300,
-					top : 200
-				});
-			}
-		});
-		
 		$('#showCohortStudy').click(function(){
 			$("input[name=\"selectedVariableID\"]").val(null);
 			$('#whetherWholeSet').text('All variables');
@@ -151,7 +121,7 @@
 			$("form[name=\"" + NAME + "\"]").submit();
 		});
 		
-		$('#startNewValidation').button().click(function(){
+		$('#startNewValidation').click(function(){
 			$('#selectCohortStudyPanel').modal('hide');
 			//$('#beforeMapping').show();
 			//$('#afterMapping').hide();
@@ -167,10 +137,6 @@
 				
 				$('#listOfCohortStudies option:selected').remove();
 			}
-		});
-		
-		$('#saveMapping').button().click(function(){
-			collectMappingFromCandidate(URL);
 		});
 		
 		$('#addOnePredictorButton').click(function(){
@@ -258,8 +224,8 @@
 						<div class="ui-tabs-nav ui-corner-all ui-widget-content" style="width:70%;height:150px;margin:2px;float:left">
 							<div class="btn-primary ui-corner-all" style="height:30px;padding-top:5px;">
 								<div style="margin:3px;float:left;">Matching result</div>
-								<input type="button" id="startNewValidation" value="Validate a new model" 
-									style="font-size:9px;float:right;" class="ui-button ui-widget ui-state-default ui-corner-all"/>
+								<input type="button" id="startNewValidation" class="btn btn-small" value="Validate a new model" 
+									style="float:right;margin-right:10px;"/>
 							</div>
 							<div style="margin:16px;margin-top:10px;">
 								Prediction model: <span id="matchingPredictionModel" style="float:right;margin-right:20px;"></span>
@@ -285,10 +251,6 @@
 						<div id="candidateMapping" class="ui-corner-all ui-tabs-nav ui-widget-content" style="height:100%;width:69%;float:left;">
 							<div class="btn-primary ui-corner-all" style="float:left;width:100%;height:12%;">
 								<span style="display:block;margin:12px;float:left;">Candidate variables</span>
-								<input type="button" id="showMatchedMapping" style="font-size:12px;float:right;margin-top:12px;margin-right:4px" 
-									value="Matched variables" class="ui-button ui-widget ui-state-default ui-corner-all"/>
-								<input type="button" id="saveMapping" value="Save the mappings" style="font-size:12px;margin-top:12px;margin-right:4px;float:right;" 
-									class="ui-button ui-widget ui-state-default ui-corner-all"/>
 							</div>
 							<div style="float:left;width:100%;height:85%;">
 								<div id="mappingResult" style="margin-top:2px;font-size:20px;width:100%;height:95%;overflow:auto;">
@@ -336,10 +298,7 @@
 										<input href="#defineVariablePanel" type="button" id="addPredictorButton" 
 											class="btn btn-info" style="margin-left:12px;" data-toggle="modal" value="add new predictor">
 									</div>
-									<div class="span1 offset3">
-										<input type="button" id="defineFormula" value="formula" class="btn btn-info" style="font-size:12px;" />
-									</div>
-									<div class="span1">
+									<div class="offset1 span1">
 										<input type="button" id="showCohortStudy" value="cohort study" class="btn btn-info" style="font-size:12px;" />
 									</div>
 								</div>
@@ -371,10 +330,6 @@
 						</div>
 					</div>
 					<div class="ui-corner-all" style="margin-top:20px;width:100%;height:60%;float:left;">
-						<div id="defineFormulaPanel" class="ui-corner-all ui-widget-content" style="display:none;">
-							<textarea id="showFormula" style="width:90%;height:90%;font-size:12px;">
-							</textarea>
-						</div>
 					    <div id="confirmWindow" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 						    <div class="modal-header">
 						    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
