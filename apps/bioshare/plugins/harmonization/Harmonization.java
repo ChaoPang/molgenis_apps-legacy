@@ -577,10 +577,13 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 		if (predictor.hasMappingResult())
 		{
 			Integer predictorID = predictor.getId();
-			table.append("<table id=\"").append(inv.getId()).append("_").append(predictor.getId())
+			table.append("<table id=\"")
+					.append(inv.getId())
+					.append("_")
+					.append(predictor.getId())
 					.append("\" style=\"display:none;position:relative;top:5px;width:100%;overflow:auto;\"")
 					.append(" class=\"table table-striped table-hover\">")
-					.append("<tr style=\"font-size:12px;\"><th style=\"width:30%;text-align:center\">Mapped varaibles")
+					.append("<tr style=\"font-size:12px;\"><th style=\"width:30%;text-align:center\">Mapped data items")
 					.append("</th><th style=\"width:50%;text-align:center\">Description</th>")
 					.append("<th style=\"width:20%;text-align:center\">Similarity score</th></tr>");
 			List<Measurement> mappedMeasurements = db.find(Measurement.class, new QueryRule(Measurement.ID,
