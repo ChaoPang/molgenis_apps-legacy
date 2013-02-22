@@ -241,7 +241,7 @@
 					<div style="height:70%;width:100%;float:left;margin-top:10px;">
 						<div class="ui-corner-all ui-tabs-nav ui-widget-content" style="height:100%;width:30%;float:left;">
 							<div class="btn-primary ui-corner-all" style="float:left;width:100%;height:12%;">
-								<span style="display:block;margin:12px;text-align:center;">Predictors</span>
+								<span style="display:block;margin:12px;text-align:center;">Variables</span>
 							</div>
 							<div style="float:left;width:100%;height:85%;">
 								<select id="validatePredictors" multiple="multiple" style="margin-top:2px;font-size:16px;width:100%;height:95%;">
@@ -250,7 +250,7 @@
 						</div>
 						<div id="candidateMapping" class="ui-corner-all ui-tabs-nav ui-widget-content" style="height:100%;width:69%;float:left;">
 							<div class="btn-primary ui-corner-all" style="float:left;width:100%;height:12%;">
-								<span style="display:block;margin:12px;float:left;">Candidate variables</span>
+								<span style="display:block;margin:12px;float:left;">Candidate data items</span>
 							</div>
 							<div style="float:left;width:100%;height:85%;">
 								<div id="mappingResult" style="margin-top:2px;font-size:20px;width:100%;height:95%;overflow:auto;">
