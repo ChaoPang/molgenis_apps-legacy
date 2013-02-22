@@ -492,9 +492,9 @@ function populateRowInTable(data, url)
 
 	newRow =  "<tr id=\"" + identifier + "\" name=\"" + identifier + "\" style=\"width:100%;\">";
 	newRow += "<td name=\"variableName\" class=\"ui-corner-all\"><span style=\"float:left;cursor:pointer;\">" + name + "</span>";
-	newRow += "<div id=\"" + identifier + "_remove\" style=\"cursor:pointer;height:16px;width:16px;float:right;margin:10px;margin-left:2px;\" "
-	+ "class=\"ui-state-default ui-corner-all\" title=\"remove this predictor\">"
-	+ "<span class=\"ui-icon ui-icon-circle-close\"></span>"
+	newRow += "<div id=\"" + identifier + "_remove\" style=\"cursor:pointer;float:right;margin:10px;margin-left:2px;height:16px;width:16px;\" "
+	+ "title=\"remove this predictor\">"
+	+ "<span class=\"icon-remove\"></span>"
 	+ "</div></td>";
 	newRow += "<td id=\"label\" name=\"label\" class=\"ui-corner-all\">" + label + "</td>";
 	newRow += "<td id=\"description\" name=\"description\" class=\"ui-corner-all\">" + description + "</td></tr>";
@@ -531,8 +531,8 @@ function populateRowInTable(data, url)
 		row = "<tr><th class=\"ui-corner-all\">ID:</td>";
 		row += "<td class=\"ui-corner-all\">" + identifier + "<div style=\"cursor:pointer;height:16px;width:16px;" 
 			+ "float:right;margin:10px;margin-left:2px;\" "
-			+ "class=\"ui-state-default ui-corner-all\" title=\"remove this predictor\">"
-			+ "<span class=\"ui-icon ui-icon-circle-close\"></span>"
+			+ "title=\"remove this predictor\">"
+			+ "<span class=\"icon-remove\"></span>"
 			+ "</div></td></tr>";
 		row += "<tr><th class=\"ui-corner-all\">Name:</td>";
 		row += "<td class=\"ui-corner-all\"><span style=\"float:left;cursor:pointer;\">" + name + "</span></td></tr>";
@@ -544,7 +544,6 @@ function populateRowInTable(data, url)
 		if(buildingBlocks != "" && buildingBlocks != null)
 		{
 			selectBlocks = "";
-			
 			for( var i = 0 ; i < buildingBlocks.split(";").length ; i++)
 			{
 				eachDefinition = buildingBlocks.split(";")[i];
@@ -559,25 +558,21 @@ function populateRowInTable(data, url)
 		row += "<tr><td></td><td><input type=\"button\" id=\"matchSelectedVariable\"  style=\"margin-left:250px;\"" 
 			+  "class=\"btn btn-info btn-small\" value=\"Match selected variable\"></td><tr>";
 		
-		$('#variableDetail').empty().append(row);
+		$('#variableDetail').empty().append(row).show();
 		
 		$('td[name="variableBuildingBlocks"] >select').chosen();
 
 		$('td[name="category"] >select').chosen();
 		
-		$('#variableDetail tr:eq(0) div').click(function()
-		{
+		$('#variableDetail tr:eq(0) div').click(function(){
 			$('#overviewTable').parents('div').eq(0).width("100%").find('tr').children().show();
 			$("input[name=\"selectedVariableID\"]").val(null);
-			$('#variableDetail').empty();
+			$('#variableDetail').empty().hide();
 		});
 		
 		$('#matchSelectedVariable').click(function(){
-			
 			$("input[name=\"selectedVariableID\"]").val($(document).data('selectedVariable'));
-			
 			$('#whetherWholeSet').text($(this).parents('table:eq(0)').find('tr:eq(2) td').text());
-			
 			$('#selectCohortStudyPanel').modal('show');
 			
 //			selectPredictionModelModal = "<div id=\"\" class=\"modal hide fade\"><div class=\"modal-header\">Select validation study(ies) to match</div>"
@@ -603,16 +598,11 @@ function populateRowInTable(data, url)
 //		});
 		
 		$('#overviewTable tr').each(function(){
-			
 			var i = 0;
-			
 			$(this).children().each(function()
 			{
 				if(i > 0)
-				{
 					$(this).hide();
-				}
-				
 				i++;
 			});
 		});
@@ -734,26 +724,15 @@ function showPredictors(predictionModelName, url)
 		url : url + "&__action=download_json_showPredictors&name=" + predictionModelName,
 		async: false,
 	}).done(function(status){
-		
 		$('#overviewTable').parents('div').eq(0).width("100%").find('tr').children().show();
-		
 		$('#selectedPredictionModelName').val(status["name"]);
-		
 		$('#formula').val(status["formula"]);
-		
 		$('#showFormula').val(status["formula"]);
-
 		$('#showPredictorPanel table tr:gt(0)').remove();
-		
 		listOfFeatures = status["predictorObjects"];
-		
 		if(listOfFeatures != null)
-		{
 			for(var i = 0; i < listOfFeatures.length; i++)
-			{
 				populateRowInTable(listOfFeatures[i], url);
-			}
-		}
 		
 //		$.each(predictionModelObject["predictorObjects"], function(predictor, Info){
 //			populateRowInTable(Info, url);
