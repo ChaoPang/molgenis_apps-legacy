@@ -185,18 +185,12 @@
 	});
 	
 	function addSelectedStudy(studyName, tableObject){
-		
 		newRow = "<tr><td>" + studyName 
 			   + "</td><td><i class=\"icon-remove\" title=\"remove\" style=\"cursor:pointer;\"></i></td></tr>";
-		
 		$(tableObject).append(newRow);
-			
 		$(tableObject).find('tr:last-child >td:eq(1) >i.icon-remove').click(function(){
-			
 			element = $(this).parents('tr:eq(0)').children('td:eq(0)');
-			
 			$('#listOfCohortStudies').append("<option selected=\"selected\">" + element.text() + "</option>");
-			
 			element.parents('tr:eq(0)').remove();
 		});
 	}
@@ -420,7 +414,7 @@
 								</table>
 							</div>
 							<table id="variableDetail" class="ui-corner-all table table-striped table-bordered" 
-								style="width:60%;float:left;margin-top:10px;margin-left:10px;">
+								style="width:60%;float:left;margin-top:10px;margin-left:10px;display:none;">
 							</table>
 						</div>
 					</div>
