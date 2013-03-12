@@ -44,7 +44,6 @@ import org.molgenis.pheno.ObservedValue;
 import org.molgenis.protocol.Protocol;
 import org.molgenis.util.Entity;
 import org.molgenis.util.tuple.HttpServletRequestTuple;
-import org.molgenis.util.tuple.Tuple;
 
 import plugins.emeasure.EMeasureEntityWriter;
 
@@ -103,7 +102,12 @@ public class CatalogueTreePlugin extends PluginModel<Entity>
 
 	public String getCustomHtmlHeaders()
 	{
-		return "<link rel=\"stylesheet\" style=\"text/css\" href=\"res/css/download_list.css\">";
+		StringBuilder s = new StringBuilder();
+		s.append("<link rel=\"stylesheet\" href=\"bootstrap/css/bootstrap.min.css\" type=\"text/css\" />");
+		s.append("<link rel=\"stylesheet\" href=\"bootstrap/css/bootstrap.css\" type=\"text/css\" />");
+		s.append("<script type=\"text/javascript\" src=\"bootstrap/js/bootstrap.min.js\"></script>");
+		s.append("<link rel=\"stylesheet\" style=\"text/css\" href=\"res/css/download_list.css\">");
+		return s.toString();
 	}
 
 	@Override
@@ -374,7 +378,6 @@ public class CatalogueTreePlugin extends PluginModel<Entity>
 					{
 						if (count == 0 && getSelectedInvestigation() == null)
 						{
-
 							this.setSelectedInvestigation(inv.getName());
 							count++;
 						}
