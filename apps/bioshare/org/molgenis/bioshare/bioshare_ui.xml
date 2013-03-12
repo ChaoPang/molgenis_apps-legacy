@@ -21,6 +21,16 @@
 				</menu>
 			</form>
 		</menu>  -->
+		<form name="investigation" entity="Investigation" label="Study details" compact_view="name,description" hide_fields="accession">
+			<menu name="InvestigationMenu">
+				<form name="measurement" entity="Measurement" label="Measurements" hide_fields="AlternateId,Investigation,targettypeAllowedForRelation,panelLabelAllowedForRelation" />
+				<form name="computeProtocol" entity="ComputeProtocol" label="Compute protocols"	compact_view="Name,Features" hide_fields="Investigation,TargetFilter" />
+				<form name="protocol" entity="Protocol" label="Protocols"	compact_view="Name,Features" hide_fields="Investigation,TargetFilter" />
+				<form name="observationTarget" entity="ObservationTarget" label="Targets" />
+				<form name="category" entity="Category" label="Categories"/>
+				<form name="studyDescription" entity="StudyDescription" label="Study description"/>
+			</menu>
+		</form>
 		<menu name="Mappings" label="Harmonization platform (ALPHA)">
 			<plugin name="Harmonization" type="plugins.harmonization.Harmonization" label="Matching parameters"/>
 			<!--<form name="mappingmeasurement" entity="MappingMeasurement" label="mapping result" hide_fields="protocolApplication,dataType,id"/> -->
