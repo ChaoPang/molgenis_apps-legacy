@@ -102,7 +102,7 @@ public class NGramMatchingModel
 	 */
 	public Set<String> createNGrams(String inputQuery, boolean removeStopWords)
 	{
-		Set<String> wordsInString = new HashSet<String>(Arrays.asList(inputQuery.split(" ")));
+		Set<String> wordsInString = new HashSet<String>(Arrays.asList(inputQuery.trim().split(" ")));
 		Set<String> tokens = new HashSet<String>();
 		wordsInString.removeAll(STOPWORDSLIST);
 		// Padding the string
