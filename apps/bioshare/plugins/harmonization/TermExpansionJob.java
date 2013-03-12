@@ -129,7 +129,7 @@ public class TermExpansionJob implements Job
 				{
 					StringBuilder matchedString = new StringBuilder();
 					StringBuilder displayedString = new StringBuilder();
-					if (combinedLists.size() == 0) combinedLists.put(entry.getKey(), entry.getKey());
+					if (combinedLists.size() == 0) newCombinedLists.put(entry.getKey(), entry.getKey());
 					else
 					{
 						for (Entry<String, String> mapEntry : combinedLists.entrySet())
