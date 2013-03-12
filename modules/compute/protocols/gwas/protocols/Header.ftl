@@ -7,7 +7,6 @@
 #PBS -l mem=${mem}
 #PBS -e ${jobname}.err
 #PBS -o ${jobname}.out
-#PBS -W umask=0007
 
 <#elseif scheduler == "SGE">
 #!/bin/bash
@@ -33,15 +32,13 @@
 
 </#if>
 
-# Source functions for data transfer to cluster
-source dataTransfer.sh
 
 <#if scheduler != "GRID">
 # Configures the GCC bash environment
-source ${root}/gcc.bashrc
+. ${root}/gcc.bashrc
 </#if>
 
 <#include "Macros.ftl"/>
 <@begin/>
-<#include "NGSHeader.ftl"/>
+
 <#if defaultInterpreter = "R"><@Rbegin/></#if>
