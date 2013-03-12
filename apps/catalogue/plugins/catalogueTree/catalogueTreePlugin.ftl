@@ -361,6 +361,11 @@
 				}
 			}
 			
+			$('select[name="cohortSelectSubmit"]').change(function(){
+				$('input[name="__action"]').val('cohortSelect');
+				$('form[name="${screen.name}"]').submit();
+			});
+			
       		$('#browser').click(function(){
 	      		$('#showDetailsHeader').fadeOut();
 	      		$('#selectionInformationHeader').fadeOut();
@@ -368,12 +373,6 @@
 	      		$('#browser').unbind('click');
 	      	});
 			
-			$('input[name="cohortSelectSubmit"]').button();
-			$('input[name="cohortSelectSubmit"]').css({
-				'font-size':'1.2em',
-				'color':'#123481'
-			});
-			$('input[name="cohortSelectSubmit"]').show();
 			
 			$('#viewButton').button();
 			$('#viewButton').css({
@@ -429,10 +428,11 @@
 						        <#if screen.getArrayInvestigations()??>
 							        <#if (screen.getArrayInvestigations()?size > 1)>
 										Choose a cohort:
-										<#list screen.getArrayInvestigations() as invName>
-												<input class="cohortSelect" type="submit" name="cohortSelectSubmit" value = "${invName}"
-													 style="display:none" onclick="__action.value='cohortSelect';"/>
-										</#list>
+										<select name="cohortSelectSubmit">
+											<#list screen.getArrayInvestigations() as invName>
+													<option value = "${invName}">${invName}</option>
+											</#list>
+										</select>
 									<#elseif (screen.getArrayInvestigations()?size > 0)>
 										Catalog: 
 										<#assign invName = screen.getArrayInvestigations()[0]> ${invName}
