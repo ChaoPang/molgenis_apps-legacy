@@ -592,14 +592,14 @@ public class BiobankImporter extends PluginModel<Entity>
 
 			startingRowIndex--;
 
-			if (request.getBoolean("multipleSheets") != null && request.getBoolean("multipleSheets") == true)
+			if (request.getBoolean("multipleSheets") != null)
 			{
-				multipleSheets = request.getBoolean("multipleSheets");
+				multipleSheets = true;
 			}
 
-			if (request.getBoolean("sheetImportProtocol") != null && request.getBoolean("sheetImportProtocol") == true)
+			if (request.getBoolean("sheetImportProtocol") != null)
 			{
-				sheetImportProtocol = request.getBoolean("sheetImportProtocol");
+				sheetImportProtocol = true;
 			}
 
 			if (request.getAction().equals("UploadFileByColumn"))
@@ -697,8 +697,9 @@ public class BiobankImporter extends PluginModel<Entity>
 					fieldName = fieldName.toString().split(":")[splitByColon.length - 1];
 
 					Integer dependedColumn = columnIndexToRelation.get(columnIndex);
-
-					dependedColumn--;
+					if (dependedColumn == null) dependedColumn = -1;
+					else
+						dependedColumn--;
 
 					table.setDirection(excelDirection);
 
@@ -766,7 +767,6 @@ public class BiobankImporter extends PluginModel<Entity>
 		}
 		else
 		{
-
 			this.setStatus("The file should be in " + file);
 
 		}
