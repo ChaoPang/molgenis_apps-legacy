@@ -39,7 +39,7 @@ public class NGramMatchingModel
 
 	private int nGrams = 0;
 
-	private static final Set<String> STOPWORDSLIST;
+	public static final Set<String> STOPWORDSLIST;
 
 	static
 	{
@@ -142,7 +142,9 @@ public class NGramMatchingModel
 		double totalToken = Math.max(inputStringTokens.size(), ontologyTermTokens.size());
 		similarity = matchedTokens / totalToken * 100;
 		DecimalFormat df = new DecimalFormat("#0.000");
-		return Double.parseDouble(df.format(similarity));
+		similarity = Double.parseDouble(df.format(similarity));
+
+		return similarity;
 	}
 
 	public int getnGrams()
