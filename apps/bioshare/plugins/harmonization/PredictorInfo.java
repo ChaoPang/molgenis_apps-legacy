@@ -55,12 +55,6 @@ public class PredictorInfo
 		}
 	}
 
-	//
-	// public void setExpandedQuery(List<String> expandedQuery)
-	// {
-	// this.expandedQuery = expandedQuery;
-	// }
-
 	public void setFinalMappings(HashMap<String, Measurement> finalMaapings)
 	{
 		this.finalMappings = finalMaapings;
