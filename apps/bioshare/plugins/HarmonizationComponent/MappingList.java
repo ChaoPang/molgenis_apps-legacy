@@ -33,7 +33,7 @@ public class MappingList
 					entry.getValue()));
 		}
 		Collections.sort(sortedLinks);
-		return (sortedLinks.size() > 1000 ? sortedLinks.subList(sortedLinks.size() - 1000, sortedLinks.size())
+		return (sortedLinks.size() > 5000 ? sortedLinks.subList(sortedLinks.size() - 5000, sortedLinks.size())
 				: sortedLinks);
 	}
 
