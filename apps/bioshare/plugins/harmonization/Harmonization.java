@@ -28,7 +28,6 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jdom.IllegalNameException;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.molgenis.compute.ComputeProtocol;
@@ -217,157 +216,6 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 
 					status.put("table", table);
 				}
-				else if ("download_json_saveMapping".equals(request.getAction()))
-				{
-					JSONObject mappingResult = new JSONObject(request.getString("mappingResult"));
-					String validationStudyName = request.getString("validationStudy");
-					String predictionModel = request.getString("predictionModel");
-					Protocol validationStudyProtocol = null;
-					StringBuilder modelAndStudy = new StringBuilder();
-					modelAndStudy.append(predictionModel).append("_").append(validationStudyName);
-					if (db.find(Protocol.class, new QueryRule(Protocol.NAME, Operator.EQUALS, modelAndStudy.toString()))
-							.size() != 0)
-					{
-						validationStudyProtocol = db.find(Protocol.class,
-								new QueryRule(Protocol.NAME, Operator.EQUALS, modelAndStudy.toString())).get(0);
-					}
-					else
-					{
-						validationStudyProtocol = new Protocol();
-						validationStudyProtocol.setName(modelAndStudy.toString());
-						validationStudyProtocol.setInvestigation_Name(validationStudyName);
-						db.add(validationStudyProtocol);
-					}
-
-					@SuppressWarnings("unchecked")
-					Iterator<String> iterator = mappingResult.keys();
-
-					while (iterator.hasNext())
-					{
-						String predictorIdentifier = iterator.next();
-						String predictorName = this.getModel().getPredictors().get(predictorIdentifier).getName();
-						StringBuilder identifier = new StringBuilder();
-						identifier.append(this.getModel().getPredictors().get(predictorIdentifier).getName())
-								.append("_").append(validationStudyName);
-						if (db.find(Measurement.class,
-								new QueryRule(Measurement.NAME, Operator.EQUALS, identifier.toString())).size() == 0)
-						{
-							Measurement m = new Measurement();
-							m.setName(identifier.toString());
-							m.setLabel(this.getModel().getPredictors().get(predictorIdentifier).getLabel());
-							m.setInvestigation_Name(validationStudyName);
-							db.add(m);
-							validationStudyProtocol.getFeatures_Id().add(m.getId());
-						}
-						JSONArray features = mappingResult.getJSONArray(predictorIdentifier);
-						List<String> listOfFeatureNames = new ArrayList<String>();
-						List<Integer> listOfFeatureIds = new ArrayList<Integer>();
-						for (int i = 0; i < features.length(); i++)
-						{
-							listOfFeatureNames.add(features.getString(i));
-						}
-
-						for (Measurement m : db.find(Measurement.class, new QueryRule(Measurement.NAME, Operator.IN,
-								listOfFeatureNames)))
-						{
-							listOfFeatureIds.add(m.getId());
-						}
-						MappingMeasurement mapping = null;
-						Query<MappingMeasurement> queryForMapping = db.query(MappingMeasurement.class);
-						queryForMapping.addRules(new QueryRule(MappingMeasurement.INVESTIGATION_NAME, Operator.EQUALS,
-								validationStudyName));
-						queryForMapping.addRules(new QueryRule(MappingMeasurement.MAPPING_NAME, Operator.EQUALS,
-								predictorName.toString()));
-
-						if (queryForMapping.find().size() == 0)
-						{
-							mapping = new MappingMeasurement();
-							mapping.setTarget_Name(identifier.toString());
-							mapping.setInvestigation_Name(validationStudyName);
-							mapping.setDataType("pairingrule");
-							mapping.setMapping_Name(predictorName.toString());
-							mapping.setFeature_Id(listOfFeatureIds);
-							mapping.setFeature_Name(listOfFeatureNames);
-							db.add(mapping);
-						}
-						else
-						{
-							mapping = queryForMapping.find().get(0);
-
-							for (Integer eachID : listOfFeatureIds)
-							{
-								if (!mapping.getFeature_Id().contains(eachID)) mapping.getFeature_Id().add(eachID);
-							}
-
-							for (String eachFeature : listOfFeatureNames)
-							{
-								if (!mapping.getFeature_Name().contains(eachFeature)) mapping.getFeature_Name().add(
-										eachFeature);
-							}
-							db.update(mapping);
-						}
-						db.update(validationStudyProtocol);
-						List<Measurement> listOfFeatures = db.find(Measurement.class, new QueryRule(Measurement.NAME,
-								Operator.IN, mapping.getFeature_Name()));
-						this.getModel().getPredictors().get(predictorIdentifier).addFinalMappings(listOfFeatures);
-						status.put(predictorIdentifier,
-								makeExistingMappingTable(this.getModel().getPredictors().get(predictorIdentifier)));
-						status.put("success", true);
-						status.put("message", "The mapping has updated");
-					}
-				}
-				else if ("download_json_removeMapping".equals(request.getAction()))
-				{
-					String predictorID = request.getString("predictor");
-					String measurementName = request.getString("measurementName");
-					StringBuilder identifier = new StringBuilder();
-					StringBuilder predictorName = new StringBuilder();
-					identifier.append(this.getModel().getPredictors().get(predictorID).getName()).append("_")
-							.append(request.getString("validationStudy"));
-					predictorName.append(predictorID).append("_").append(request.getString("predictionModel"));
-					Query<MappingMeasurement> queryForMapping = db.query(MappingMeasurement.class);
-					queryForMapping.addRules(new QueryRule(MappingMeasurement.INVESTIGATION_NAME, Operator.EQUALS,
-							request.getString("validationStudy")));
-					queryForMapping.addRules(new QueryRule(MappingMeasurement.MAPPING_NAME, Operator.EQUALS,
-							predictorName.toString()));
-					Measurement m = db.find(Measurement.class,
-							new QueryRule(Measurement.NAME, Operator.EQUALS, measurementName)).get(0);
-					this.getModel().getPredictors().get(predictorName.toString().replaceAll(" ", "_"))
-							.getFinalMappings().remove(m.getName());
-					MappingMeasurement mapping = queryForMapping.find().get(0);
-					mapping.getFeature_Name().remove(measurementName);
-					mapping.getFeature_Id().remove(m.getId());
-
-					if (mapping.getFeature_Id().size() == 0)
-					{
-						db.remove(mapping);
-						StringBuilder modelAndStudy = new StringBuilder();
-						modelAndStudy.append(request.getString("predictionModel")).append("_")
-								.append(request.getString("validationStudy"));
-						Protocol validationStudyProtocol = db.find(Protocol.class,
-								new QueryRule(Protocol.NAME, Operator.EQUALS, modelAndStudy.toString())).get(0);
-						Measurement derivedPredictor = db.find(Measurement.class,
-								new QueryRule(Measurement.NAME, Operator.EQUALS, identifier)).get(0);
-						validationStudyProtocol.getFeatures_Id().remove(derivedPredictor.getId());
-						validationStudyProtocol.getFeatures_Name().remove(derivedPredictor.getName());
-
-						if (validationStudyProtocol.getFeatures_Id().size() == 0) db.remove(validationStudyProtocol);
-						else
-							db.update(validationStudyProtocol);
-						db.remove(derivedPredictor);
-					}
-					else
-						db.update(mapping);
-
-					StringBuilder message = new StringBuilder();
-					status.put(
-							"message",
-							message.append("The variable ").append(measurementName)
-									.append(" was removed from the mapping for ").append(predictorID).toString());
-
-					status.put("success", true);
-
-				}
 				else if ("download_json_monitorJobs".equals(request.getAction()))
 				{
 					status.put("jobTitle", (this.getModel().isStringMatching() ? "Matching variables"
@@ -454,11 +302,6 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 						eachPredictor.put("existingMapping", "");
 						status.put(predictor.getId().toString(), eachPredictor);
 					}
-				}
-				else if ("download_json_existingMapping".equals(request.getAction()))
-				{
-					collectPredictorInfo(db, request);
-					this.getModel().setRetrieveResult(true);
 				}
 
 				db.commitTx();
@@ -1163,13 +1006,21 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 				StringBuilder combinedString = new StringBuilder();
 				if (!m.getCategories_Name().isEmpty())
 				{
-					for (String categoryName : m.getCategories_Name())
+					for (Category c : findCategoriesByName(m.getCategories_Name(), db))
 					{
+						fields.add(c.getDescription() == null ? StringUtils.EMPTY : c.getDescription());
 						combinedString.delete(0, combinedString.length());
-						combinedString.append(categoryName.replaceAll(m.getInvestigation_Name(), "")).append(' ')
-								.append(m.getDescription());
-						fields.add(combinedString.toString().replace('_', ' '));
+						combinedString.append(c.getDescription()).append(' ').append(m.getDescription());
+						fields.add(combinedString.toString());
 					}
+					// for (String categoryName : m.getCategories_Name())
+					// {
+					// combinedString.delete(0, combinedString.length());
+					// combinedString.append(categoryName.replaceAll(m.getInvestigation_Name(),
+					// "")).append(' ')
+					// .append(m.getDescription());
+					// fields.add(combinedString.toString().replace('_', ' '));
+					// }
 				}
 			}
 			List<Set<String>> listOfNGrams = new ArrayList<Set<String>>();
@@ -1192,6 +1043,14 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 			nGramsMapForMeasurements.put(invesigationName, nGramsMap);
 		}
 		this.getModel().setNGramsMapForMeasurements(nGramsMapForMeasurements);
+	}
+
+	private List<Category> findCategoriesByName(List<String> categories_Name, Database db) throws DatabaseException
+	{
+		List<Category> listOfCategories = db.find(Category.class, new QueryRule(Category.NAME, Operator.IN,
+				categories_Name));
+		if (listOfCategories == null) listOfCategories = new ArrayList<Category>();
+		return listOfCategories;
 	}
 
 	private List<String> removeDuplicate(String... elements)
