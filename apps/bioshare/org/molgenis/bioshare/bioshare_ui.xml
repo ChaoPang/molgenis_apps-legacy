@@ -39,6 +39,7 @@
 			<plugin name="Importer" type="plugins.genericwizard.GenericWizard" label="Biobank Importer" />
 			<plugin name="BiobankImporter" type="plugins.biobankimporter.BiobankImporter" label="Biobank Importer" />
 		</menu>
+		<plugin name="LuceneIndexer" type="plugins.luceneIndexer.LuceneIndexer" label="Lucene Indexer" />
 		<!-- <menu name="Admin">
 			<plugin name="Settings" type="plugins.system.settings.Settings" />
 			<menu name="usermanagement" position="left" label="User management">
