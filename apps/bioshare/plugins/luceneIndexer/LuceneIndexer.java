@@ -104,15 +104,22 @@ public class LuceneIndexer extends PluginModel<Entity>
 				{
 					Document document = new Document();
 					document.add(new Field("type", "dataItem", Field.Store.YES, Field.Index.NOT_ANALYZED));
+					document.add(new Field("measurementID", m.getId().toString(), Field.Store.YES,
+							Field.Index.NOT_ANALYZED));
 					document.add(new Field("measurement", m.getDescription().toLowerCase(), Field.Store.YES,
 							Field.Index.ANALYZED));
 					document.add(new Field("investigation", m.getInvestigation_Name().toLowerCase(), Field.Store.YES,
-							Field.Index.NOT_ANALYZED));
+							Field.Index.ANALYZED));
 					if (m.getCategories_Name().size() > 0)
 					{
 						for (Category c : findCategoriesByName(m.getCategories_Name(), db))
 						{
 							document.add(new Field("category", c.getDescription().toLowerCase(), Field.Store.YES,
+									Field.Index.ANALYZED));
+							StringBuilder combinedDescription = new StringBuilder();
+							document.add(new Field("category", combinedDescription
+									.append(m.getDescription().toLowerCase()).append(' ')
+									.append(c.getDescription().toLowerCase()).toString(), Field.Store.YES,
 									Field.Index.ANALYZED));
 						}
 					}
