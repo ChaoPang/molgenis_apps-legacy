@@ -48,7 +48,7 @@ public class LuceneMatching
 	{
 		this.model = model;
 		// TODO: the index should be stored in and loaded from the app.
-		this.indexDirectory = new File("/Users/chaopang/Desktop/TempIndex");
+		this.indexDirectory = new File("/Users/chaopang/Desktop/ontologyTermIndex");
 		this.luceneReader = IndexReader.open(FSDirectory.open(indexDirectory), true);
 		this.luceneSearcher = new IndexSearcher(luceneReader);
 	}
@@ -119,6 +119,8 @@ public class LuceneMatching
 			for (String synonym : d.getValues("ontologyTermSynonym"))
 				ontologyContainer.getSynonyms().add(synonym);
 			if (!listOfOntologyTerms.contains(ontologyContainer)) listOfOntologyTerms.add(ontologyContainer);
+			if (!model.getCachedOntologyTerms().containsKey(ontologyContainer.getOntologyTermID())) model
+					.getCachedOntologyTerms().put(ontologyContainer.getOntologyTermID(), ontologyContainer);
 		}
 		return listOfOntologyTerms;
 	}
