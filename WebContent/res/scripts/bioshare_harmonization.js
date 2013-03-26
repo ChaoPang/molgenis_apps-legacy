@@ -138,7 +138,7 @@ function showExistingMapping(url)
 	}
 }
 
-function validateStudy(formName)
+function validateStudy(formName, whetherLucene)
 {
 	if($('#listOfCohortStudies').siblings('table').find('tr:gt(0)').length == 0){
 
@@ -150,33 +150,22 @@ function validateStudy(formName)
 
 	}else{
 
-//		predictionModel = $('#selectPredictionModel').val();
-//
-//		validationStudy = $('#listOfCohortStudies').val();
-
-		$('#details').empty();
-
-//		$('#browser').empty();
-		
+		$('#details').empty();		
 		selectedStudies = {};
-		
 		$('#listOfCohortStudies').siblings('table').find('tr:gt(0)').each(function(){
 			
 			selectedStudies[$(this).children('td:eq(0)').text()] = $(this).children('td:eq(0)').text();
 		});
-		
 		$('input[name=\"selectedStudiesToMatch\"]').val(JSON.stringify(selectedStudies));
-
 		$('#existingMappings').empty();
-
 		$('#mappingResult').empty();
-
 		$('#validatePredictors').empty();
-
 		$('#matchingSelectedPredictor').text("");
-
-		$("input[name=\"__action\"]").val("loadMapping");
-
+		if(whetherLucene == true){
+			$("input[name=\"__action\"]").val("luceneMapping");
+		}else{
+			$("input[name=\"__action\"]").val("normalMapping");
+		}
 		$("form[name=\"" + formName + "\"]").submit();
 	}
 }
@@ -574,28 +563,7 @@ function populateRowInTable(data, url)
 			$("input[name=\"selectedVariableID\"]").val($(document).data('selectedVariable'));
 			$('#whetherWholeSet').text($(this).parents('table:eq(0)').find('tr:eq(2) td').text());
 			$('#selectCohortStudyPanel').modal('show');
-			
-//			selectPredictionModelModal = "<div id=\"\" class=\"modal hide fade\"><div class=\"modal-header\">Select validation study(ies) to match</div>"
-//									   + "<div class=\"modal-body\"></div><div class=\"modal-footer\">"
-//									   + "<input type=\"button\" id=\"matchSelectedVariable\""
-//									   +  "class=\"btn btn-info btn-small\" value=\"Match selected variable\">" 
-//									   +  "<button class=\"btn btn-info btn-small\" data-dismiss=\"modal\" aria-hidden=\"true\">Close</button></div></div>";
-//			
-//			$('#beforeMapping').append(selectPredictionModelModal);
 		});
-		
-//		$('#matchSelectedVariable').click(function()
-//		{	
-//			formName = $(this).parents('form').eq(0).attr('name');
-//			
-//			selectedVariableID = $(document).data('selectedVariable');
-//			
-//			$("input[name=\"selectedVariableID\"]").val(selectedVariableID);
-//			
-//			$("input[name=\"__action\"]").val("loadMapping");
-//			
-//			$("form[name=\"" + formName + "\"]").submit();
-//		});
 		
 		$('#overviewTable tr').each(function(){
 			var i = 0;
