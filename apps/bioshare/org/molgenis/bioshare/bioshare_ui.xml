@@ -32,7 +32,7 @@
 			</menu>
 		</form>
 		<menu name="Mappings" label="Harmonization platform (ALPHA)">
-			<plugin name="Harmonization" type="plugins.harmonization.Harmonization" label="Matching parameters"/>
+			<plugin name="Harmonization" type="plugins.harmonizationPlugin.Harmonization" label="Matching parameters"/>
 			<!--<form name="mappingmeasurement" entity="MappingMeasurement" label="mapping result" hide_fields="protocolApplication,dataType,id"/> -->
 		</menu>
 		<menu name="ImportData" label="Import Data">
