@@ -143,38 +143,6 @@ public class LuceneMatching
 				List<String> listOfQueries = new ArrayList<String>(expandedQueries.keySet());
 				int iteration = listOfQueries.size() / maxClause;
 				if (iteration == 0) iteration = 1;
-				// Set<ScoreDoc> listOfHits = new HashSet<ScoreDoc>();
-				// for (int i = 0; i < iteration; i++)
-				// {
-				// int lowerLimit = i * maxClause;
-				// int upperLimit = (i + 1) * maxClause > expandedQueries.size()
-				// ? expandedQueries.size() : (i + 1)
-				// * maxClause;
-				// upperLimit--;
-				// BooleanQuery q = new BooleanQuery();
-				// BooleanQuery.setMaxClauseCount(maxClause * 2);
-				// q.add(new QueryParser(Version.LUCENE_30, "investigation", new
-				// PorterStemAnalyzer())
-				// .parse(eachStudy), BooleanClause.Occur.MUST);
-				// for (String eachQuery : listOfQueries.subList(lowerLimit,
-				// upperLimit))
-				// {
-				// String matchingString = eachQuery.replaceAll("[^a-zA-Z0-9 ]",
-				// " ");
-				// q.add(new QueryParser(Version.LUCENE_30, "measurement", new
-				// PorterStemAnalyzer())
-				// .parse(matchingString), BooleanClause.Occur.SHOULD);
-				// q.add(new QueryParser(Version.LUCENE_30, "category", new
-				// PorterStemAnalyzer())
-				// .parse(matchingString), BooleanClause.Occur.SHOULD);
-				//
-				// }
-				// TopScoreDocCollector collector =
-				// TopScoreDocCollector.create(100, true);
-				// luceneSearcher.search(q, collector);
-				// ScoreDoc[] hits = collector.topDocs().scoreDocs;
-				// listOfHits.addAll(Arrays.asList(hits));
-				// }
 				for (Entry<String, String> entry : expandedQueries.entrySet())
 				{
 					BooleanQuery q = new BooleanQuery(true);
@@ -197,18 +165,7 @@ public class LuceneMatching
 						score = Double.parseDouble(df.format(score));
 						mapping.add(entry.getValue(), Integer.parseInt(d.get("measurementID")), score);
 					}
-					// listOfHits.addAll(Arrays.asList(hits));
 				}
-				// for (ScoreDoc hit : listOfHits)
-				// {
-				// int docId = hit.doc;
-				// double score = hit.score;
-				// Document d = luceneSearcher.doc(docId);
-				// DecimalFormat df = new DecimalFormat("#0.000");
-				// score = Double.parseDouble(df.format(score));
-				// mapping.add("N/A", Integer.parseInt(d.get("measurementID")),
-				// score);
-				// }
 				mappingsForStudies.put(eachStudy, mapping);
 				model.incrementFinishedJob();
 			}
