@@ -1,4 +1,4 @@
-package plugins.harmonization;
+package plugins.ontologyTermInfo;
 
 import java.util.HashSet;
 import java.util.List;
@@ -22,6 +22,30 @@ public class OntologyTermContainer
 		this.label = label;
 		this.listOfDescendClass = new HashSet<OntologyTermContainer>();
 		this.synonyms = new HashSet<String>();
+	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((ontologyTermID == null) ? 0 : ontologyTermID.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (obj == null) return false;
+		if (getClass() != obj.getClass()) return false;
+		OntologyTermContainer other = (OntologyTermContainer) obj;
+		if (ontologyTermID == null)
+		{
+			if (other.ontologyTermID != null) return false;
+		}
+		else if (!ontologyTermID.equals(other.ontologyTermID)) return false;
+		return true;
 	}
 
 	public String getOntologyTermID()

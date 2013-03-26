@@ -1,4 +1,4 @@
-package plugins.HarmonizationComponent;
+package plugins.normalMatching;
 
 
 public class LinkedInformation implements Comparable<LinkedInformation>

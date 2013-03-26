@@ -109,11 +109,11 @@
 		});
 		
 		$('#validatePredictionModel').click(function(){
-			validateStudy(NAME);
+			validateStudy(NAME, false);
 		});
 		
-		$('#viewMappingForPredictionModel').click(function(){
-			showExistingMapping(URL);
+		$('#validatePredictionModelLucene').click(function(){
+			validateStudy(NAME, true);
 		});
 		
 		$('#submitBatchPredictors').click(function(){
@@ -317,7 +317,7 @@
 								</table>
 							</div>
 							<div class="modal-footer">
-								<input type="button" id="viewMappingForPredictionModel" value="view mapping" class="btn btn-primary"/>
+								<input type="button" id="validatePredictionModelLucene" value="Lucene Match" class="btn btn-primary"/>
 								<input type="button" id="validatePredictionModel" value="Match" class="btn btn-primary"/>
 								<button id="cancelSelectCohortStudy" class="btn btn-primary" data-dismiss="modal"/>Cancel</button>
 							</div>

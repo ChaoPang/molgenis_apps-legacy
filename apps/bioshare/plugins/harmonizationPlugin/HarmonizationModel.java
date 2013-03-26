@@ -1,4 +1,4 @@
-package plugins.harmonization;
+package plugins.harmonizationPlugin;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,7 +11,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.molgenis.framework.ui.EasyPluginModel;
 import org.quartz.Scheduler;
 
-import plugins.HarmonizationComponent.NGramMatchingModel;
+import plugins.normalMatching.NGramMatchingModel;
+import plugins.ontologyTermInfo.OntologyTermContainer;
 import uk.ac.ebi.ontocat.bioportal.BioportalOntologyService;
 
 public class HarmonizationModel extends EasyPluginModel

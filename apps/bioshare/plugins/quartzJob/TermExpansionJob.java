@@ -1,4 +1,4 @@
-package plugins.harmonization;
+package plugins.quartzJob;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,6 +15,10 @@ import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
+import plugins.harmonizationPlugin.CreatePotentialTerms;
+import plugins.harmonizationPlugin.HarmonizationModel;
+import plugins.harmonizationPlugin.PredictorInfo;
+import plugins.ontologyTermInfo.OntologyTermContainer;
 import uk.ac.ebi.ontocat.OntologyService.SearchOptions;
 import uk.ac.ebi.ontocat.OntologyServiceException;
 import uk.ac.ebi.ontocat.bioportal.BioportalOntologyService;
@@ -77,7 +81,6 @@ public class TermExpansionJob implements Job
 				.getTermsLists(Arrays.asList(predictorLabel.split(" ")));
 		Map<String, Set<OntologyTermContainer>> mapForBlocks = new LinkedHashMap<String, Set<OntologyTermContainer>>();
 		boolean possibleBlocks = false;
-
 		for (List<String> eachSetOfBlocks : potentialBlocks)
 		{
 			for (String eachBlock : eachSetOfBlocks)
@@ -90,7 +93,6 @@ public class TermExpansionJob implements Job
 			}
 			if (possibleBlocks) expandedQueries
 					.putAll(resursiveCombineList(mapForBlocks, new HashMap<String, String>()));
-
 		}
 		return expandedQueries;
 	}
@@ -111,7 +113,7 @@ public class TermExpansionJob implements Job
 		return expandedQueries;
 	}
 
-	public Map<String, String> resursiveCombineList(Map<String, Set<OntologyTermContainer>> mapForBlocks,
+	public static Map<String, String> resursiveCombineList(Map<String, Set<OntologyTermContainer>> mapForBlocks,
 			Map<String, String> combinedLists)
 	{
 		Map<String, String> newCombinedLists = new HashMap<String, String>();
@@ -147,7 +149,8 @@ public class TermExpansionJob implements Job
 					for (OntologyTermContainer ontologyTerm : entry.getValue())
 					{
 						String ontologyTermId = ontologyTerm.getOntologyTermID();
-						ontologyTerm.getSynonyms().add(ontologyTerm.getLabel());
+						if (!ontologyTerm.getSynonyms().contains(ontologyTerm.getLabel())) ontologyTerm.getSynonyms()
+								.add(ontologyTerm.getLabel());
 						for (String eachSynonym : ontologyTerm.getSynonyms())
 						{
 							StringBuilder matchedString = new StringBuilder();
@@ -280,34 +283,5 @@ public class TermExpansionJob implements Job
 			}
 		}
 		return false;
-	}
-
-	public List<String> uniqueList(List<String> uncleanedList)
-	{
-		List<String> uniqueList = new ArrayList<String>();
-
-		for (String eachString : uncleanedList)
-		{
-			if (!uniqueList.contains(eachString.toLowerCase().trim())) uniqueList.add(eachString.toLowerCase().trim());
-		}
-
-		return uniqueList;
-	}
-
-	public List<String> combineLists(List<String> listOne, List<String> listTwo)
-	{
-		Set<String> combinedList = new HashSet<String>();
-		StringBuilder combinedString = new StringBuilder();
-
-		for (String first : listOne)
-		{
-			for (String second : listTwo)
-			{
-				combinedString.delete(0, combinedString.length());
-				combinedString.append(first).append(' ').append(second);
-				if (!combinedList.contains(combinedString.toString())) combinedList.add(combinedString.toString());
-			}
-		}
-		return new ArrayList<String>(combinedList);
 	}
 }

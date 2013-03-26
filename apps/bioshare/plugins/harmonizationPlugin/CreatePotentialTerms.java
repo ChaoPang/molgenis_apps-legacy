@@ -1,4 +1,4 @@
-package plugins.harmonization;
+package plugins.harmonizationPlugin;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,17 +14,14 @@ public class CreatePotentialTerms
 	public static List<List<String>> getTermsLists(List<String> start)
 	{
 		List<List<String>> result = new ArrayList<List<String>>();
-
 		if (0 < start.size())
 		{
 			for (int pos = 0; pos < start.size(); pos++)
 			{
 				List<String> left = asOneElement(start.subList(0, pos + 1));
-
 				result.addAll(combine(left, getTermsLists(start.subList(pos + 1, start.size()))));
 			}
 		}
-
 		return result;
 	}
 
@@ -35,10 +32,8 @@ public class CreatePotentialTerms
 	private static List<String> asOneElement(List<String> list)
 	{
 		String result = "";
-
 		for (int i = 0; i < list.size(); i++)
 			result = result + (0 == i ? "" : " ") + list.get(i);
-
 		return new ArrayList<String>(Arrays.asList(result));
 	}
 
@@ -48,31 +43,24 @@ public class CreatePotentialTerms
 	 */
 	private static List<List<String>> combine(List<String> prefix, List<List<String>> termsLists)
 	{
-		ArrayList<List<String>> result = new ArrayList<List<String>>();
-
-		if (0 == termsLists.size())
-		{
-			result.add(prefix);
-		}
+		List<List<String>> result = new ArrayList<List<String>>();
+		if (0 == termsLists.size()) result.add(prefix);
 		else
 		{
 			for (int i = 0; i < termsLists.size(); i++)
 			{
-				ArrayList<String> newResult = new ArrayList<String>();
+				List<String> newResult = new ArrayList<String>();
 				newResult.addAll(prefix);
 				newResult.addAll(termsLists.get(i));
-
 				result.add(newResult);
 			}
 		}
-
 		return result;
 	}
 
 	public static void main(String[] args)
 	{
-		ArrayList<String> example = new ArrayList<String>(Arrays.asList("parental", "diabetes", "mellitus", "type2",
-				"test"));
+		List<String> example = new ArrayList<String>(Arrays.asList("parental", "diabetes", "mellitus", "type2", "test"));
 		System.out.println(getTermsLists(example));
 	}
 }

@@ -1,4 +1,4 @@
-package plugins.HarmonizationComponent;
+package plugins.normalMatching;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;

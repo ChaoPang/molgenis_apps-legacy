@@ -1,4 +1,4 @@
-package plugins.harmonization;
+package plugins.harmonizationPlugin;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,8 +9,8 @@ import java.util.Map.Entry;
 
 import org.molgenis.pheno.Measurement;
 
-import plugins.HarmonizationComponent.LinkedInformation;
-import plugins.HarmonizationComponent.MappingList;
+import plugins.normalMatching.LinkedInformation;
+import plugins.normalMatching.MappingList;
 
 public class PredictorInfo
 {

@@ -1,4 +1,4 @@
-package plugins.harmonization;
+package plugins.quartzJob;
 
 import java.util.HashMap;
 import java.util.List;
@@ -10,8 +10,10 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.StatefulJob;
 
-import plugins.HarmonizationComponent.MappingList;
-import plugins.HarmonizationComponent.NGramMatchingModel;
+import plugins.harmonizationPlugin.HarmonizationModel;
+import plugins.harmonizationPlugin.PredictorInfo;
+import plugins.normalMatching.MappingList;
+import plugins.normalMatching.NGramMatchingModel;
 
 public class StringMatchingJob implements StatefulJob
 {

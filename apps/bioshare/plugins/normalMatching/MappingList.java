@@ -1,4 +1,4 @@
-package plugins.HarmonizationComponent;
+package plugins.normalMatching;
 
 import java.util.ArrayList;
 import java.util.Collections;
