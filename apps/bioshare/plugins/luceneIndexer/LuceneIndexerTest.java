@@ -2,19 +2,25 @@ package plugins.luceneIndexer;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
-import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.StaleReaderException;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermEnum;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -26,11 +32,19 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.LockObtainFailedException;
 import org.apache.lucene.util.Version;
 import org.molgenis.framework.db.DatabaseException;
+import org.molgenis.io.csv.CsvReader;
+import org.molgenis.util.tuple.Tuple;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 
-import plugins.HarmonizationComponent.OWLModel;
+import plugins.harmonizationPlugin.CreatePotentialTerms;
+import plugins.ontologyTermInfo.OWLModel;
+import uk.ac.ebi.ontocat.OntologyService;
+import uk.ac.ebi.ontocat.OntologyService.SearchOptions;
 import uk.ac.ebi.ontocat.OntologyServiceException;
+import uk.ac.ebi.ontocat.OntologyTerm;
+import uk.ac.ebi.ontocat.bioportal.BioportalOntologyService;
+import uk.ac.ebi.ontocat.virtual.CachedServiceDecorator;
 
 public class LuceneIndexerTest
 {
@@ -49,28 +63,28 @@ public class LuceneIndexerTest
 			OntologyServiceException, ParseException, DatabaseException, OWLOntologyCreationException
 	{
 		File indexDirectory = new File("/Users/chaopang/Desktop/TempIndex");
-		System.out.println("Started index.....");
-		File ontologyFile = new File("/Users/chaopang/Desktop/Ontologies/Thesaurus_12.04e-Processed.owl");
-		startIndex(indexDirectory, ontologyFile);
-		System.out.println("Finished index.....");
-		System.out.println("Started searching index.....");
-		searchIndexExact(indexDirectory);
-		// searchIndexStandard(indexDirectory);
-		// Analyzer analyzer = new Analyzer()
-		// {
-		// @Override
-		// public TokenStream tokenStream(String fieldName, Reader reader)
-		// {
-		// TokenStream result = new StandardTokenizer(Version.LUCENE_30,
-		// reader);
-		// result = new StandardFilter(result);
-		// result = new LowerCaseFilter(result);
-		// result = new PorterStemFilter(result);
-		// result = new StopFilter(true, result,
-		// NGramMatchingModel.STOPWORDSLIST, true);
-		// return result;
-		// }
-		// };
+		// System.out.println("Started index.....");
+		// File ontologyFolder = new
+		// File("/Users/chaopang/Desktop/Ontologies/");
+		// File ontologyTermFromBioportal = new
+		// File("/Users/chaopang/Desktop/Variables/importHOP_20_Variables.csv");
+		// boolean createIndex = removeExistingIndex(indexDirectory);
+		// IndexWriter writer = new
+		// IndexWriter(FSDirectory.open(indexDirectory), new KeywordAnalyzer(),
+		// createIndex,
+		// IndexWriter.MaxFieldLength.UNLIMITED);
+		// for (File ontologyFile : ontologyFolder.listFiles())
+		// if (ontologyFile.getName().toLowerCase().endsWith(".owl")
+		// || ontologyFile.getName().toLowerCase().endsWith(".obo"))
+		// startIndex(indexDirectory, ontologyFile,
+		// writer);
+		// startIndexFromBioPortal(indexDirectory, ontologyTermFromBioportal,
+		// writer);
+		// writer.close();
+		// System.out.println("Finished index.....");
+		// System.out.println("Started searching index.....");
+		// searchIndexExact(indexDirectory);
+		searchIndexStandard(indexDirectory);
 	}
 
 	private static void searchIndexStandard(File indexDirectory) throws CorruptIndexException, IOException,
@@ -78,15 +92,15 @@ public class LuceneIndexerTest
 	{
 		IndexReader reader = IndexReader.open(FSDirectory.open(indexDirectory), true);
 		IndexSearcher searcher = new IndexSearcher(reader);
-		TopScoreDocCollector collector = TopScoreDocCollector.create(100, true);
-		BooleanQuery q = new BooleanQuery();
-		String query_one = "White bread";
-		String query_two = "amount of alcohol-free or low-alcohol beers per week";
+		TopScoreDocCollector collector = TopScoreDocCollector.create(10, true);
+		BooleanQuery q = new BooleanQuery(true);
+		String query_one = "sex";
+		String query_two = "what";
 		q.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse(query_one),
 				BooleanClause.Occur.SHOULD);
 		q.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse(query_two),
 				BooleanClause.Occur.SHOULD);
-		q.add(new QueryParser(Version.LUCENE_30, "investigation", new PorterStemAnalyzer()).parse("finrisk"),
+		q.add(new QueryParser(Version.LUCENE_30, "investigation", new PorterStemAnalyzer()).parse("FinRisk"),
 				BooleanClause.Occur.MUST);
 		searcher.search(q, collector);
 		ScoreDoc[] hits = collector.topDocs().scoreDocs;
@@ -108,22 +122,31 @@ public class LuceneIndexerTest
 		IndexSearcher searcher = new IndexSearcher(reader);
 		TopScoreDocCollector collector = TopScoreDocCollector.create(1000, true);
 		BooleanQuery q = new BooleanQuery();
-		q.add(new TermQuery(new Term("ontologyTerm", "alcoholic beverage")), BooleanClause.Occur.MUST);
+		q.add(new TermQuery(new Term("ontologyTermSynonym", "sex")), BooleanClause.Occur.MUST);
 		searcher.search(q, collector);
 		ScoreDoc[] hits = collector.topDocs().scoreDocs;
 		System.out.println("Found " + hits.length + " hits.");
-		String path = null;
+		Set<String> path = new HashSet<String>();
 		for (int i = 0; i < hits.length; ++i)
 		{
 			int docId = hits[i].doc;
 			double score = hits[i].score;
 			Document d = searcher.doc(docId);
-			path = d.get("nodePath");
+			path.add(d.get("nodePath"));
 			System.out.println((i + 1) + ". " + d.get("ontologyTerm") + "\t" + score);
+			for (String synonym : d.getValues("ontologyTermSynonym"))
+			{
+				System.out.println(synonym);
+			}
 		}
-		Query queryForChildren = new WildcardQuery(new Term("nodePath", path + "*"));
+		BooleanQuery finalQuery = new BooleanQuery();
+		for (String nodePath : path)
+		{
+			Query queryForChildren = new WildcardQuery(new Term("nodePath", nodePath + "*"));
+			finalQuery.add(queryForChildren, Occur.SHOULD);
+		}
 		collector = TopScoreDocCollector.create(10000, true);
-		searcher.search(queryForChildren, collector);
+		searcher.search(finalQuery, collector);
 		hits = collector.topDocs().scoreDocs;
 		for (int i = 0; i < hits.length; ++i)
 		{
@@ -136,11 +159,97 @@ public class LuceneIndexerTest
 		searcher.close();
 	}
 
-	private static void startIndex(File indexDirectory, File ontologyFile) throws CorruptIndexException,
-			LockObtainFailedException, IOException, OntologyServiceException, OWLOntologyCreationException
+	private static void startIndexFromBioPortal(File indexDirectory, File indexInfo, IndexWriter writer)
+			throws IOException, OntologyServiceException
+	{
+		CsvReader reader = new CsvReader(indexInfo, ',');
+		Iterator<String> columnHeaders = reader.colNamesIterator();
+		while (columnHeaders.hasNext())
+		{
+			System.out.println(columnHeaders.next());
+		}
+		Iterator<Tuple> rows = reader.iterator();
+		Set<OntologyTerm> collectedOntologyTerms = new HashSet<OntologyTerm>();
+		while (rows.hasNext())
+		{
+			Tuple eachRow = rows.next();
+			String definition = eachRow.getString("Definition");
+			String label = eachRow.getString("Label");
+			List<List<String>> blocks = new ArrayList<List<String>>();
+			if (definition != null && !definition.isEmpty())
+			{
+				for (String eachDefinition : definition.split(";"))
+				{
+					blocks.add(Arrays.asList(eachDefinition.split(",")));
+				}
+			}
+			else
+				blocks = CreatePotentialTerms.getTermsLists(Arrays.asList(label.split(" ")));
+
+			for (List<String> groupOfQueries : blocks)
+			{
+				for (String eachQuery : groupOfQueries)
+				{
+					OntologyTerm ot = collectOntologyTermFromBioportal(eachQuery);
+					if (ot != null) collectedOntologyTerms.add(ot);
+				}
+			}
+
+		}
+		System.out.println("Parent concepts have been collected!");
+		collectOntologyTermSubTree(collectedOntologyTerms, writer);
+		reader.close();
+	}
+
+	private static void collectOntologyTermSubTree(Set<OntologyTerm> collectedOntologyTerms, IndexWriter writer)
+			throws OntologyServiceException, CorruptIndexException, IOException
+	{
+		BioportalOntologyService os = new BioportalOntologyService();
+		for (OntologyTerm ot : collectedOntologyTerms)
+		{
+			String nodePath = ot.getAccession();
+			storeBioPortalTerm(nodePath, ot, os, writer);
+			for (OntologyTerm subTerm : os.getAllChildren(ot))
+			{
+				String subNodePath = nodePath + "." + subTerm.getAccession();
+				storeBioPortalTerm(subNodePath, subTerm, os, writer);
+			}
+			System.out.println("OntologyTerm : " + ot.getLabel()
+					+ " has been collected for information on all of its children!");
+		}
+	}
+
+	private static void storeBioPortalTerm(String nodePath, OntologyTerm ot, BioportalOntologyService os,
+			IndexWriter writer) throws OntologyServiceException, CorruptIndexException, IOException
+	{
+		Document document = new Document();
+		document.add(new Field("nodePath", nodePath, Field.Store.YES, Field.Index.ANALYZED));
+		document.add(new Field("ontologyTerm", ot.getLabel().toLowerCase(), Field.Store.YES, Field.Index.NOT_ANALYZED));
+		document.add(new Field("ontologyTermIRI", ot.getURI().toString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
+		document.add(new Field("ontologyTermSynonym", ot.getLabel().toLowerCase(), Field.Store.YES,
+				Field.Index.NOT_ANALYZED));
+		document.add(new Field("ontologyLabel", ot.getLabel().toLowerCase(), Field.Store.YES, Field.Index.NOT_ANALYZED));
+		for (String synonym : os.getSynonyms(ot))
+		{
+			document.add(new Field("ontologyTermSynonym", synonym.toLowerCase(), Field.Store.YES,
+					Field.Index.NOT_ANALYZED));
+		}
+		writer.addDocument(document);
+	}
+
+	private static OntologyTerm collectOntologyTermFromBioportal(String eachQuery) throws OntologyServiceException
+	{
+		OntologyService os = CachedServiceDecorator.getService(new BioportalOntologyService());
+		List<OntologyTerm> ontologyTermResults = os.searchOntology("1353", eachQuery, SearchOptions.EXACT);
+		OntologyTerm ot = null;
+		if (ontologyTermResults.size() > 0) ot = ontologyTermResults.get(0);
+		return ot;
+	}
+
+	private static boolean removeExistingIndex(File indexDirectory) throws CorruptIndexException, StaleReaderException,
+			LockObtainFailedException, IOException
 	{
 		boolean createIndex = true;
-		// Delete existing index
 		if (IndexReader.indexExists(FSDirectory.open(indexDirectory)))
 		{
 			IndexReader reader = IndexReader.open(FSDirectory.open(indexDirectory), false);
@@ -153,41 +262,19 @@ public class LuceneIndexerTest
 				else if (term.field().equals("ontologyLabel")) reader.deleteDocuments(term);
 				else if (term.field().equals("parent")) reader.deleteDocuments(term);
 				else if (term.field().equals("parentSynonym")) reader.deleteDocuments(term);
+				else if (term.field().equals("ontologyTermSynonym")) reader.deleteDocuments(term);
 				else if (term.field().equals("nodePath")) reader.deleteDocuments(term);
 			}
 			reader.close();
 			createIndex = false;
 		}
-		IndexWriter writer = new IndexWriter(FSDirectory.open(indexDirectory), new KeywordAnalyzer(), createIndex,
-				IndexWriter.MaxFieldLength.UNLIMITED);
-		// OntologyService os = new FileOntologyService(ontologyFile.toURI());
-		// for (Ontology ontology : os.getOntologies())
-		// {
-		// List<OntologyTerm> allTerms = os.getRootTerms(ontology);
-		// for (OntologyTerm ot : allTerms)
-		// System.out.println(ot);
-		// String ontologyLabel = null;
-		// if (allTerms != null)
-		// {
-		// int count = 0;
-		// for (OntologyTerm term : allTerms)
-		// {
-		// if (os.getParents(term).size() == 0)
-		// {
-		// if (ontologyLabel == null)
-		// {
-		// if (ontology.getLabel() == null || ontology.getLabel().isEmpty())
-		// ontologyLabel = ontology
-		// .getOntologyAccession();
-		// else
-		// ontologyLabel = ontology.getLabel();
-		// }
-		// indexEachOntologyTerm("0." + count, ontologyLabel, term, os, writer);
-		// count++;
-		// }
-		// }
-		// }
-		// }
+		return createIndex;
+	}
+
+	private static void startIndex(File indexDirectory, File ontologyFile, IndexWriter writer)
+			throws CorruptIndexException, LockObtainFailedException, IOException, OntologyServiceException,
+			OWLOntologyCreationException
+	{
 
 		OWLModel owlModel = new OWLModel(ontologyFile.getAbsolutePath());
 		int count = 0;
@@ -196,8 +283,6 @@ public class LuceneIndexerTest
 			indexEachOntologyTerm("0." + count, owlModel.getOntologyLabel(), subClass, owlModel, writer);
 			count++;
 		}
-
-		writer.close();
 	}
 
 	public static void indexEachOntologyTerm(String path, String ontologyLabel, OWLClass term, OWLModel owlModel,
@@ -206,8 +291,16 @@ public class LuceneIndexerTest
 		Document document = new Document();
 		document.add(new Field("nodePath", path, Field.Store.YES, Field.Index.ANALYZED));
 		document.add(new Field("ontologyTerm", owlModel.getLabel(term).toLowerCase(), Field.Store.YES,
-				Field.Index.ANALYZED));
-		document.add(new Field("ontologyLabel", ontologyLabel.toLowerCase(), Field.Store.YES, Field.Index.ANALYZED));
+				Field.Index.NOT_ANALYZED));
+		document.add(new Field("ontologyTermIRI", term.getIRI().toString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
+		document.add(new Field("ontologyTermSynonym", owlModel.getLabel(term).toLowerCase(), Field.Store.YES,
+				Field.Index.NOT_ANALYZED));
+		document.add(new Field("ontologyLabel", ontologyLabel.toLowerCase(), Field.Store.YES, Field.Index.NOT_ANALYZED));
+		for (String synonym : owlModel.getSynonyms(term))
+		{
+			document.add(new Field("ontologyTermSynonym", synonym.toLowerCase(), Field.Store.YES,
+					Field.Index.NOT_ANALYZED));
+		}
 		writer.addDocument(document);
 		Set<OWLClass> listOfChildren = owlModel.getChildClass(term);
 		if (listOfChildren.size() > 0)
@@ -221,27 +314,4 @@ public class LuceneIndexerTest
 			}
 		}
 	}
-	// private static String recursiveGet(Document document, OntologyTerm term,
-	// OntologyService os)
-	// {
-	// List<OntologyTerm> listOfParentTerms = null;
-	// try
-	// {
-	// listOfParentTerms = os.getParents(term);
-	// }
-	// catch (Exception e)
-	// {
-	// System.out.println("No parents!");
-	// }
-	// if (listOfParentTerms != null)
-	// {
-	// for (OntologyTerm parentTerm : listOfParentTerms)
-	// {
-	// document.add(new Field("parent", parentTerm.getLabel().toLowerCase(),
-	// Field.Store.YES,
-	// Field.Index.ANALYZED));
-	// recursiveGet(document, parentTerm, os);
-	// }
-	// }
-	// }
 }
