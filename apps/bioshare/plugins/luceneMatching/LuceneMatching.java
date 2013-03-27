@@ -48,9 +48,17 @@ public class LuceneMatching
 	{
 		this.model = model;
 		// TODO: the index should be stored in and loaded from the app.
-		this.indexDirectory = new File("/Users/chaopang/Desktop/ontologyTermIndex");
-		this.luceneReader = IndexReader.open(FSDirectory.open(indexDirectory), true);
-		this.luceneSearcher = new IndexSearcher(luceneReader);
+		indexDirectory = new File("/Users/chaopang/Desktop/ontologyTermIndex");
+		luceneReader = IndexReader.open(FSDirectory.open(indexDirectory), true);
+		luceneSearcher = new IndexSearcher(luceneReader);
+	}
+
+	public LuceneMatching(File indexDirectory) throws CorruptIndexException, IOException
+	{
+		this.model = null;
+		this.indexDirectory = indexDirectory;
+		luceneReader = IndexReader.open(FSDirectory.open(indexDirectory), true);
+		luceneSearcher = new IndexSearcher(luceneReader);
 	}
 
 	private Map<String, String> getTermExpansion(List<String> buildingBlocks) throws IOException
@@ -60,17 +68,18 @@ public class LuceneMatching
 		{
 			potentialBlocks.add(Arrays.asList(eachBlock.split(",")));
 		}
-		return combineTermByIndex(potentialBlocks);
+		return combineTermByIndex(potentialBlocks, true);
 	}
 
 	private Map<String, String> getTermExpansion(String predictorLabel) throws IOException
 	{
 		List<List<String>> potentialBlocks = CreatePotentialTerms
 				.getTermsLists(Arrays.asList(predictorLabel.split(" ")));
-		return combineTermByIndex(potentialBlocks);
+		return combineTermByIndex(potentialBlocks, true);
 	}
 
-	public Map<String, String> combineTermByIndex(List<List<String>> potentialBlocks) throws IOException
+	public Map<String, String> combineTermByIndex(List<List<String>> potentialBlocks, boolean includeChildren)
+			throws IOException
 	{
 		Map<String, String> expandedQueries = new HashMap<String, String>();
 		Map<String, Set<OntologyTermContainer>> mapForBlocks = new HashMap<String, Set<OntologyTermContainer>>();
@@ -79,7 +88,15 @@ public class LuceneMatching
 		{
 			for (String eachBlock : eachSetOfBlocks)
 			{
-				mapForBlocks.put(eachBlock, getOntologyTermsFromIndex(eachBlock));
+				Set<OntologyTermContainer> listOfOntologyTerms = null;
+				if (includeChildren) listOfOntologyTerms = getOntologyTermsFromIndex(eachBlock);
+				else
+					listOfOntologyTerms = getOntologyTermSynonymsFromIndex(eachBlock);
+
+				for (OntologyTermContainer ontologyTerm : listOfOntologyTerms)
+					if (model != null && !model.getCachedOntologyTerms().containsKey(ontologyTerm.getOntologyTermID())) model
+							.getCachedOntologyTerms().put(ontologyTerm.getOntologyTermID(), ontologyTerm);
+				mapForBlocks.put(eachBlock, listOfOntologyTerms);
 				if (mapForBlocks.get(eachBlock).size() > 0) possibleBlocks = true;
 			}
 			if (possibleBlocks) expandedQueries.putAll(TermExpansionJob.resursiveCombineList(mapForBlocks,
@@ -88,28 +105,55 @@ public class LuceneMatching
 		return expandedQueries;
 	}
 
-	public Set<OntologyTermContainer> getOntologyTermsFromIndex(String eachBlock) throws IOException
+	public Set<String> searchForOntologyTermPaths(String eachBlock) throws IOException
 	{
-		Set<OntologyTermContainer> listOfOntologyTerms = new HashSet<OntologyTermContainer>();
-		TopScoreDocCollector collector = TopScoreDocCollector.create(1000, true);
-		if (eachBlock == null) eachBlock = StringUtils.EMPTY;
+		Set<String> nodePathSet = new HashSet<String>();
 		BooleanQuery q = new BooleanQuery();
 		q.add(new TermQuery(new Term("ontologyTerm", eachBlock.toLowerCase())), BooleanClause.Occur.MUST);
+		TopScoreDocCollector collector = TopScoreDocCollector.create(1000, true);
 		luceneSearcher.search(q, collector);
 		ScoreDoc[] hits = collector.topDocs().scoreDocs;
-		Set<String> nodePathSet = new HashSet<String>();
 		for (int i = 0; i < hits.length; i++)
 		{
 			int docId = hits[i].doc;
 			Document d = luceneSearcher.doc(docId);
 			nodePathSet.add(d.get("nodePath"));
 		}
+		return nodePathSet;
+	}
+
+	public Set<OntologyTermContainer> getOntologyTermSynonymsFromIndex(String eachBlock) throws IOException
+	{
+		Set<OntologyTermContainer> listOfOntologyTerms = new HashSet<OntologyTermContainer>();
+		BooleanQuery q = new BooleanQuery();
+		q.add(new TermQuery(new Term("ontologyTermSynonym", eachBlock.toLowerCase())), BooleanClause.Occur.MUST);
+		TopScoreDocCollector collector = TopScoreDocCollector.create(1000, true);
+		luceneSearcher.search(q, collector);
+		ScoreDoc[] hits = collector.topDocs().scoreDocs;
+		for (int i = 0; i < hits.length; i++)
+		{
+			int docId = hits[i].doc;
+			Document d = luceneSearcher.doc(docId);
+			OntologyTermContainer ontologyContainer = new OntologyTermContainer(d.get("ontologyTermIRI"),
+					new ArrayList<String>(), d.get("ontologyTerm"), d.get("ontologyLabel"));
+			for (String synonym : d.getValues("ontologyTermSynonym"))
+				ontologyContainer.getSynonyms().add(synonym);
+			if (!listOfOntologyTerms.contains(ontologyContainer)) listOfOntologyTerms.add(ontologyContainer);
+		}
+		return listOfOntologyTerms;
+	}
+
+	public Set<OntologyTermContainer> getOntologyTermsFromIndex(String eachBlock) throws IOException
+	{
+		Set<OntologyTermContainer> listOfOntologyTerms = new HashSet<OntologyTermContainer>();
+		if (eachBlock == null) eachBlock = StringUtils.EMPTY;
+		Set<String> nodePathSet = searchForOntologyTermPaths(eachBlock);
 		BooleanQuery finalQuery = new BooleanQuery();
 		for (String nodePath : nodePathSet)
 			finalQuery.add(new WildcardQuery(new Term("nodePath", nodePath + "*")), Occur.SHOULD);
-		collector = TopScoreDocCollector.create(10000, true);
+		TopScoreDocCollector collector = TopScoreDocCollector.create(10000, true);
 		luceneSearcher.search(finalQuery, collector);
-		hits = collector.topDocs().scoreDocs;
+		ScoreDoc[] hits = collector.topDocs().scoreDocs;
 		for (int i = 0; i < hits.length; ++i)
 		{
 			int docId = hits[i].doc;
@@ -119,8 +163,6 @@ public class LuceneMatching
 			for (String synonym : d.getValues("ontologyTermSynonym"))
 				ontologyContainer.getSynonyms().add(synonym);
 			if (!listOfOntologyTerms.contains(ontologyContainer)) listOfOntologyTerms.add(ontologyContainer);
-			if (!model.getCachedOntologyTerms().containsKey(ontologyContainer.getOntologyTermID())) model
-					.getCachedOntologyTerms().put(ontologyContainer.getOntologyTermID(), ontologyContainer);
 		}
 		return listOfOntologyTerms;
 	}
