@@ -9,13 +9,18 @@ package plugins.luceneIndexer;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.index.TermEnum;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.LockObtainFailedException;
 import org.molgenis.framework.db.Database;
@@ -29,6 +34,9 @@ import org.molgenis.organization.Investigation;
 import org.molgenis.pheno.Category;
 import org.molgenis.pheno.Measurement;
 import org.molgenis.util.Entity;
+
+import plugins.harmonizationPlugin.CreatePotentialTerms;
+import plugins.luceneMatching.LuceneMatching;
 
 //import plugins.autohidelogin.AutoHideLoginModel; 
 
@@ -75,7 +83,7 @@ public class LuceneIndexer extends PluginModel<Entity>
 		if ("indexDataItems".equals(request.getAction()))
 		{
 			System.out.println("Start indexing data items.....");
-			File indexDirectory = new File("/Users/chaopang/Desktop/TempIndex");
+			File indexDirectory = new File("/Users/chaopang/Desktop/ontologyTermIndex");
 			indexBiobankStudies(indexDirectory, db);
 			System.out.println("Indexing was finished!");
 		}
@@ -89,45 +97,79 @@ public class LuceneIndexer extends PluginModel<Entity>
 	private void indexBiobankStudies(File indexDirectory, Database db) throws DatabaseException, CorruptIndexException,
 			LockObtainFailedException, IOException
 	{
-		IndexWriter writer = null;
-		boolean createIndex = true;
-		if (IndexReader.indexExists(FSDirectory.open(indexDirectory))) createIndex = false;
-		writer = new IndexWriter(FSDirectory.open(indexDirectory), new PorterStemAnalyzer(), createIndex,
-				IndexWriter.MaxFieldLength.UNLIMITED);
-
 		List<Investigation> studies = db.find(Investigation.class);
-		for (Investigation inv : studies)
+		IndexWriter writer = null;
+		try
 		{
-			for (Measurement m : findFeaturesByInv(inv.getName(), db))
+			boolean createIndex = true;
+			if (IndexReader.indexExists(FSDirectory.open(indexDirectory))) createIndex = false;
 			{
-				if (m.getDescription() != null && !m.getDescription().isEmpty())
+				IndexReader reader = IndexReader.open(FSDirectory.open(indexDirectory), false);
+				TermEnum termsEnum = reader.terms();
+				while (termsEnum.next())
 				{
-					Document document = new Document();
-					document.add(new Field("type", "dataItem", Field.Store.YES, Field.Index.NOT_ANALYZED));
-					document.add(new Field("measurementID", m.getId().toString(), Field.Store.YES,
-							Field.Index.NOT_ANALYZED));
-					document.add(new Field("measurement", m.getDescription().toLowerCase(), Field.Store.YES,
-							Field.Index.ANALYZED));
-					document.add(new Field("investigation", m.getInvestigation_Name().toLowerCase(), Field.Store.YES,
-							Field.Index.ANALYZED));
-					if (m.getCategories_Name().size() > 0)
+					Term term = termsEnum.term();
+					if (term.field().equals("type"))
 					{
-						for (Category c : findCategoriesByName(m.getCategories_Name(), db))
-						{
-							document.add(new Field("category", c.getDescription().toLowerCase(), Field.Store.YES,
-									Field.Index.ANALYZED));
-							StringBuilder combinedDescription = new StringBuilder();
-							document.add(new Field("category", combinedDescription
-									.append(m.getDescription().toLowerCase()).append(' ')
-									.append(c.getDescription().toLowerCase()).toString(), Field.Store.YES,
-									Field.Index.ANALYZED));
-						}
+						reader.deleteDocuments(term);
 					}
-					writer.addDocument(document);
+				}
+				createIndex = false;
+				reader.close();
+			}
+			writer = new IndexWriter(FSDirectory.open(indexDirectory), new KeywordAnalyzer(), createIndex,
+					IndexWriter.MaxFieldLength.UNLIMITED);
+			LuceneMatching model = new LuceneMatching(indexDirectory);
+			for (Investigation inv : studies)
+			{
+				for (Measurement m : findFeaturesByInv(inv.getName(), db))
+				{
+					if (m.getDescription() != null && !m.getDescription().isEmpty())
+					{
+						Document document = new Document();
+						document.add(new Field("type", "dataItem", Field.Store.YES, Field.Index.NOT_ANALYZED));
+						document.add(new Field("measurementID", m.getId().toString(), Field.Store.YES,
+								Field.Index.NOT_ANALYZED));
+						document.add(new Field("measurement", m.getDescription().toLowerCase(), Field.Store.YES,
+								Field.Index.ANALYZED));
+						document.add(new Field("investigation", m.getInvestigation_Name().toLowerCase(),
+								Field.Store.YES, Field.Index.ANALYZED));
+						if (inv.getName().equalsIgnoreCase("finRisk")) addExpansionToDocument(model,
+								m.getDescription(), "measurementExpansion", document);
+
+						if (m.getCategories_Name().size() > 0)
+						{
+							for (Category c : findCategoriesByName(m.getCategories_Name(), db))
+							{
+								document.add(new Field("category", c.getDescription().toLowerCase(), Field.Store.YES,
+										Field.Index.ANALYZED));
+								StringBuilder combinedDescription = new StringBuilder();
+								document.add(new Field("category", combinedDescription
+										.append(m.getDescription().toLowerCase()).append(' ')
+										.append(c.getDescription().toLowerCase()).toString(), Field.Store.YES,
+										Field.Index.ANALYZED));
+							}
+						}
+						writer.addDocument(document);
+					}
 				}
 			}
 		}
-		writer.close();
+		finally
+		{
+			if (writer != null) writer.close();
+		}
+	}
+
+	private void addExpansionToDocument(LuceneMatching model, String originalText, String fieldName, Document document)
+			throws IOException
+	{
+		List<List<String>> potentialTokens = CreatePotentialTerms.getTermsLists(Arrays.asList(originalText.split(" ")));
+		Map<String, String> expandedQueries = model.combineTermByIndex(potentialTokens, false);
+		for (String descriptionExpansion : expandedQueries.keySet())
+		{
+			document.add(new Field(fieldName, descriptionExpansion.toLowerCase(), Field.Store.YES, Field.Index.ANALYZED));
+		}
 	}
 
 	private List<Category> findCategoriesByName(List<String> categories_Name, Database db) throws DatabaseException
