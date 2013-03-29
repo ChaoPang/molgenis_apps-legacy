@@ -48,7 +48,7 @@ public class LuceneMatching
 	{
 		this.model = model;
 		// TODO: the index should be stored in and loaded from the app.
-		indexDirectory = new File("/Users/chaopang/Desktop/ontologyTermIndex");
+		indexDirectory = new File("/Users/chaopang/Desktop/TempIndex");
 		luceneReader = IndexReader.open(FSDirectory.open(indexDirectory), true);
 		luceneSearcher = new IndexSearcher(luceneReader);
 	}
@@ -178,21 +178,15 @@ public class LuceneMatching
 			predictor.getExpandedQuery().put(predictor.getLabel(), predictor.getLabel());
 			Map<String, MappingList> mappingsForStudies = new HashMap<String, MappingList>();
 			Map<String, String> expandedQueries = predictor.getExpandedQuery();
-			int defaultClause = BooleanQuery.getMaxClauseCount();
 			for (String eachStudy : model.getSelectedValidationStudy())
 			{
 				MappingList mapping = new MappingList();
-				int maxClause = defaultClause;
-				if (expandedQueries.size() > maxClause) maxClause = maxClause * 5;
-				List<String> listOfQueries = new ArrayList<String>(expandedQueries.keySet());
-				int iteration = listOfQueries.size() / maxClause;
-				if (iteration == 0) iteration = 1;
 				for (Entry<String, String> entry : expandedQueries.entrySet())
 				{
 					BooleanQuery q = new BooleanQuery(true);
 					String matchingString = entry.getKey().replaceAll("[^a-zA-Z0-9 ]", " ");
-					q.add(new QueryParser(Version.LUCENE_30, "investigation", new PorterStemAnalyzer())
-							.parse(eachStudy), BooleanClause.Occur.MUST);
+					q.add(new QueryParser(Version.LUCENE_30, "investigation", new PorterStemAnalyzer()).parse(eachStudy
+							.toLowerCase()), BooleanClause.Occur.MUST);
 					q.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer())
 							.parse(matchingString), BooleanClause.Occur.SHOULD);
 					q.add(new QueryParser(Version.LUCENE_30, "category", new PorterStemAnalyzer())

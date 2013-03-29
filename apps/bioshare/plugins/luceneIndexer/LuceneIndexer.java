@@ -13,7 +13,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.CorruptIndexException;
@@ -83,7 +82,7 @@ public class LuceneIndexer extends PluginModel<Entity>
 		if ("indexDataItems".equals(request.getAction()))
 		{
 			System.out.println("Start indexing data items.....");
-			File indexDirectory = new File("/Users/chaopang/Desktop/ontologyTermIndex");
+			File indexDirectory = new File("/Users/chaopang/Desktop/TempIndex");
 			indexBiobankStudies(indexDirectory, db);
 			System.out.println("Indexing was finished!");
 		}
@@ -117,7 +116,7 @@ public class LuceneIndexer extends PluginModel<Entity>
 				createIndex = false;
 				reader.close();
 			}
-			writer = new IndexWriter(FSDirectory.open(indexDirectory), new KeywordAnalyzer(), createIndex,
+			writer = new IndexWriter(FSDirectory.open(indexDirectory), new PorterStemAnalyzer(), createIndex,
 					IndexWriter.MaxFieldLength.UNLIMITED);
 			LuceneMatching model = new LuceneMatching(indexDirectory);
 			for (Investigation inv : studies)
@@ -130,7 +129,7 @@ public class LuceneIndexer extends PluginModel<Entity>
 						document.add(new Field("type", "dataItem", Field.Store.YES, Field.Index.NOT_ANALYZED));
 						document.add(new Field("measurementID", m.getId().toString(), Field.Store.YES,
 								Field.Index.NOT_ANALYZED));
-						document.add(new Field("measurement", m.getDescription().toLowerCase(), Field.Store.YES,
+						document.add(new Field("measurement", m.getDescription().toLowerCase(), Field.Store.NO,
 								Field.Index.ANALYZED));
 						document.add(new Field("investigation", m.getInvestigation_Name().toLowerCase(),
 								Field.Store.YES, Field.Index.ANALYZED));
@@ -141,12 +140,12 @@ public class LuceneIndexer extends PluginModel<Entity>
 						{
 							for (Category c : findCategoriesByName(m.getCategories_Name(), db))
 							{
-								document.add(new Field("category", c.getDescription().toLowerCase(), Field.Store.YES,
+								document.add(new Field("category", c.getDescription().toLowerCase(), Field.Store.NO,
 										Field.Index.ANALYZED));
 								StringBuilder combinedDescription = new StringBuilder();
 								document.add(new Field("category", combinedDescription
 										.append(m.getDescription().toLowerCase()).append(' ')
-										.append(c.getDescription().toLowerCase()).toString(), Field.Store.YES,
+										.append(c.getDescription().toLowerCase()).toString(), Field.Store.NO,
 										Field.Index.ANALYZED));
 							}
 						}

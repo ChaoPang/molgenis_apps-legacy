@@ -92,16 +92,12 @@ public class LuceneIndexerTest
 	{
 		IndexReader reader = IndexReader.open(FSDirectory.open(indexDirectory), true);
 		IndexSearcher searcher = new IndexSearcher(reader);
-		TopScoreDocCollector collector = TopScoreDocCollector.create(10, true);
-		BooleanQuery q = new BooleanQuery(true);
-		String query_one = "sex";
+		TopScoreDocCollector collector = TopScoreDocCollector.create(1000, true);
+		BooleanQuery q = new BooleanQuery();
+		String query_one = "gender";
 		String query_two = "what";
 		q.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse(query_one),
 				BooleanClause.Occur.SHOULD);
-		q.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse(query_two),
-				BooleanClause.Occur.SHOULD);
-		q.add(new QueryParser(Version.LUCENE_30, "investigation", new PorterStemAnalyzer()).parse("FinRisk"),
-				BooleanClause.Occur.MUST);
 		searcher.search(q, collector);
 		ScoreDoc[] hits = collector.topDocs().scoreDocs;
 		System.out.println("Found " + hits.length + " hits.");
