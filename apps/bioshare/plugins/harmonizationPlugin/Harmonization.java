@@ -1033,6 +1033,7 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 
 	private static class JSONFeature
 	{
+		private final Integer id;
 		private final String name;
 		private final String label;
 		private final String description;
@@ -1044,6 +1045,7 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 
 		public JSONFeature(Measurement m, String buildingBlocks, List<JSONCategory> categories)
 		{
+			this.id = m.getId();
 			this.name = m.getName();
 			this.label = m.getLabel();
 			this.description = m.getDescription();

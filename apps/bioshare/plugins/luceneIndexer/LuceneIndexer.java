@@ -142,11 +142,14 @@ public class LuceneIndexer extends PluginModel<Entity>
 							{
 								document.add(new Field("category", c.getDescription().toLowerCase(), Field.Store.NO,
 										Field.Index.ANALYZED));
-								StringBuilder combinedDescription = new StringBuilder();
-								document.add(new Field("category", combinedDescription
-										.append(m.getDescription().toLowerCase()).append(' ')
-										.append(c.getDescription().toLowerCase()).toString(), Field.Store.NO,
-										Field.Index.ANALYZED));
+								// StringBuilder combinedDescription = new
+								// StringBuilder();
+								// document.add(new Field("category",
+								// combinedDescription
+								// .append(m.getDescription().toLowerCase()).append(' ')
+								// .append(c.getDescription().toLowerCase()).toString(),
+								// Field.Store.NO,
+								// Field.Index.ANALYZED));
 							}
 						}
 						writer.addDocument(document);

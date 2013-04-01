@@ -307,6 +307,7 @@ function getFeatureInfo(identifier, url){
 		async : false,
 	}).done(function(status){
 		var table = $('<table />').attr('class','table table-striped');
+		table.append('<tr><th>ID</th><td>' + status.id + '</td></tr>');
 		table.append('<tr><th>Name</th><td>' + status.name + '</td></tr>');
 		if(status.label !== undefined)
 			table.append('<tr><th>Label</th><td>' + status.label + '</td></tr>');
