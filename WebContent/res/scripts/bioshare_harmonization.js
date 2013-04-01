@@ -416,6 +416,18 @@ function getOntologyTerm(element, url){
 	});
 }
 
+function filterTable(variableLabel){
+	if(variableLabel == "" || variableLabel == null){
+		$('#overviewTable tr').show();
+	}else{
+		$('#overviewTable tr:gt(0)').each(function(){
+			if($(this).find('td:eq(1)').text().toLowerCase() != variableLabel.toLowerCase()){
+				$(this).hide();
+			}
+		});
+	}
+}
+
 function insertNewRow(url)
 {	
 	message = {};
@@ -698,32 +710,16 @@ function showPredictors(predictionModelName, url)
 		$('#showFormula').val(status["formula"]);
 		$('#showPredictorPanel table tr:gt(0)').remove();
 		listOfFeatures = status["predictorObjects"];
-		if(listOfFeatures != null)
-			for(var i = 0; i < listOfFeatures.length; i++)
-				populateRowInTable(listOfFeatures[i], url);
-		
-//		$.each(predictionModelObject["predictorObjects"], function(predictor, Info){
-//			populateRowInTable(Info, url);
-//		});
-	});
-}
-
-function defineFormula(url)
-{
-	selected = $('#selectPredictionModel').val();
-	data = {};
-	data["selected"] = selected;
-	data["formula"] = $('#showFormula').val();
-	$.ajax({
-		url : url + "&__action=download_json_defineFormula&data=" + JSON.stringify(data),
-		async: false,
-	}).done(function(status){
-		message = status["message"];
-		success = status["success"];
-		showMessage(message, success);
-		if(success == true){
-			$('#formula').val($('#showFormula').val());
-			$('#defineFormulaPanel').dialog('close');
+		var autoCompleteSource = new Array();
+		if(listOfFeatures != null){
+			for(var i = 0; i < listOfFeatures.length; i++){
+				var eachVariableInfo = listOfFeatures[i];
+				autoCompleteSource.push(eachVariableInfo["label"]);
+				populateRowInTable(eachVariableInfo, url);
+			}
+			$('#searchVariable').typeahead({
+			      source: autoCompleteSource
+		    });
 		}
 	});
 }

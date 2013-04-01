@@ -33,12 +33,11 @@
 	var searchNode = new Array();
 	var listOfDataTypes=[<#list screen.getDataTypes() as dataType>"${dataType}",</#list>];
 	
-	$(document).ready(function()
-	{	
+	$(document).ready(function(){
+		
 		var allStudies = [<#if screen.getValidationStudies()??><#list screen.getValidationStudies() as study>"${study}",</#list></#if>];
-		
 		var selectedStudies = [<#if screen.getSelectedValidationStudy()??><#list screen.getSelectedValidationStudy() as study>"${study}",</#list></#if>];
-		
+
 		for(var i = 0; i < allStudies.length; i++){
 			
 			element = allStudies[i];
@@ -60,11 +59,8 @@
 			$('#matchingValidationStudy').change(function(){
 				retrieveResult(URL);
 			});
-			
 			$('#beforeMapping').hide();
-			
 			$('#afterMapping').show();
-			
 			retrieveResult(URL);
 		}
 		
@@ -181,6 +177,14 @@
 		
 		$('#closeConfirmWinodw').click(function(){
 			$('#confirmWindow').modal('hide');
+		});
+		
+		$('#filterVariable').click(function(){
+			filterTable($('#searchVariable').val());
+		});
+		$('#removeFilterVariable').click(function(){
+			$('#searchVariable').val('');
+			filterTable();
 		});
 	});
 	
@@ -404,6 +408,12 @@
 							</div>
 						</div>
 						<div id="showPredictorPanel" style="height:100%;width:100%;">
+							<div style="float:left;width:100%;">
+								<label>Type variable name:</label>
+		    					<input id="searchVariable" type="text" placeholder="Search variables....">
+		    					<button id="filterVariable" type="button" style="margin-bottom:10px;" class="btn btn-small">Filter</button>
+		    					<button id="removeFilterVariable" type="button" style="margin-bottom:10px;" class="btn btn-small">Remove</button>
+	    					</div>
 							<div style="width:100%;height:90%;overflow:auto;float:left;margin-top:10px;margin-right:10px;">
 								<table id="overviewTable" class="ui-corner-all table table-striped table-bordered">
 									<tr>
