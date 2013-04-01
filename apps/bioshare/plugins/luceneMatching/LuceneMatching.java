@@ -17,6 +17,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
@@ -33,6 +34,7 @@ import plugins.harmonizationPlugin.CreatePotentialTerms;
 import plugins.harmonizationPlugin.HarmonizationModel;
 import plugins.harmonizationPlugin.PredictorInfo;
 import plugins.luceneIndexer.PorterStemAnalyzer;
+import plugins.normalMatching.LinkedInformation;
 import plugins.normalMatching.MappingList;
 import plugins.ontologyTermInfo.OntologyTermContainer;
 import plugins.quartzJob.TermExpansionJob;
@@ -167,6 +169,47 @@ public class LuceneMatching
 		return listOfOntologyTerms;
 	}
 
+	public void normalizeScore(MappingList mapping, String eachStudy) throws ParseException, IOException
+	{
+		int iterationNumber = 0;
+		BooleanQuery finalQuery = new BooleanQuery(true);
+		finalQuery.add(new QueryParser(Version.LUCENE_30, "investigation", new PorterStemAnalyzer()).parse(eachStudy
+				.toLowerCase()), BooleanClause.Occur.MUST);
+		Map<String, String> expandedQueries = new HashMap<String, String>();
+		for (LinkedInformation info : mapping.getSortedInformation())
+		{
+			if (iterationNumber < 100)
+			{
+				if (!expandedQueries.containsKey(info.getExpandedQuery())) expandedQueries.put(info.getExpandedQuery(),
+						info.getDisplayedLabel());
+				iterationNumber++;
+			}
+			else
+				break;
+		}
+		for (String query : expandedQueries.keySet())
+		{
+			finalQuery.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse(query
+					.toLowerCase()), BooleanClause.Occur.SHOULD);
+			finalQuery
+					.add(new QueryParser(Version.LUCENE_30, "category", new PorterStemAnalyzer()).parse(query
+							.toLowerCase()), BooleanClause.Occur.SHOULD);
+		}
+		TopScoreDocCollector collector = TopScoreDocCollector.create(1000, true);
+		luceneSearcher.search(finalQuery, collector);
+		ScoreDoc[] hits = collector.topDocs().scoreDocs;
+		for (ScoreDoc hit : hits)
+		{
+			int docId = hit.doc;
+			double score = hit.score;
+			Document d = luceneSearcher.doc(docId);
+			DecimalFormat df = new DecimalFormat("#0.000");
+			score = Double.parseDouble(df.format(score));
+			Integer featureID = Integer.parseInt(d.get("measurementID"));
+			mapping.updateScore(featureID, score);
+		}
+	}
+
 	public void getMatchingResult() throws NumberFormatException, Exception
 	{
 		for (PredictorInfo predictor : model.getPredictors().values())
@@ -191,7 +234,7 @@ public class LuceneMatching
 							.parse(matchingString), BooleanClause.Occur.SHOULD);
 					q.add(new QueryParser(Version.LUCENE_30, "category", new PorterStemAnalyzer())
 							.parse(matchingString), BooleanClause.Occur.SHOULD);
-					TopScoreDocCollector collector = TopScoreDocCollector.create(100, true);
+					TopScoreDocCollector collector = TopScoreDocCollector.create(20, true);
 					luceneSearcher.search(q, collector);
 					ScoreDoc[] hits = collector.topDocs().scoreDocs;
 					for (ScoreDoc hit : hits)
@@ -201,9 +244,10 @@ public class LuceneMatching
 						Document d = luceneSearcher.doc(docId);
 						DecimalFormat df = new DecimalFormat("#0.000");
 						score = Double.parseDouble(df.format(score));
-						mapping.add(entry.getValue(), Integer.parseInt(d.get("measurementID")), score);
+						mapping.add(entry.getKey(), entry.getValue(), Integer.parseInt(d.get("measurementID")), score);
 					}
 				}
+				normalizeScore(mapping, eachStudy);
 				mappingsForStudies.put(eachStudy, mapping);
 				model.incrementFinishedJob();
 			}

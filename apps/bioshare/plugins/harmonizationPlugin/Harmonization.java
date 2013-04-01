@@ -628,7 +628,6 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 	private Measurement addNewPredictorToDB(Database db, Map<String, String> data) throws DatabaseException
 	{
 		StringBuilder stringBuilder = new StringBuilder();
-
 		String predictionModelName = data.get("selected").trim();
 		String buildingBlockString = data.get("buildingBlocks".toLowerCase()).trim();
 		String unitName = data.get(Measurement.UNIT_NAME.toLowerCase()).trim();
@@ -636,7 +635,6 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 		String dataType = data.get(Measurement.DATATYPE.toLowerCase()).trim();
 
 		Measurement m = new Measurement();
-
 		m.setName(stringBuilder.append(data.get(Measurement.NAME.toLowerCase()).trim()).toString());
 		m.setLabel(data.get(Measurement.LABEL.toLowerCase()).trim());
 		m.setDescription(data.get(Measurement.DESCRIPTION.toLowerCase()));
@@ -654,40 +652,28 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 		}
 
 		List<String> categoryRefs = new ArrayList<String>();
-
 		// Handle the categories
 		if (!categories.isEmpty())
 		{
 			String categoryElements[] = categories.split(",");
-
 			List<Category> newCategories = new ArrayList<Category>();
-
 			for (String eachCategory : removeDuplicate(categoryElements))
 			{
 				String uniqueName = eachCategory.replaceAll("[^(a-zA-Z0-9_\\s)]", " ").trim();
-
 				String codeAndString[] = eachCategory.split("=");
-
 				Category c = new Category();
-
 				stringBuilder = new StringBuilder();
-
 				c.setName(stringBuilder.append(uniqueName).append("_").append(predictionModelName).toString());
 				c.setCode_String(codeAndString[0].trim());
 				c.setDescription(codeAndString[1].trim());
 				c.setInvestigation_Name(PREDICTIONMODEL);
 				newCategories.add(c);
-
 				categoryRefs.add(c.getName());
 			}
-
 			db.update(newCategories, DatabaseAction.ADD_IGNORE_EXISTING, Category.NAME, Category.INVESTIGATION_NAME);
 		}
-
 		m.setCategories_Name(categoryRefs);
-
 		db.add(m);
-
 		ComputeProtocol cp = db.find(ComputeProtocol.class,
 				new QueryRule(ComputeProtocol.NAME, Operator.EQUALS, predictionModelName)).get(0);
 
@@ -865,10 +851,8 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 	private void removePredictor(Integer predictorID, String predictionModel, Database db) throws DatabaseException
 	{
 		Measurement m = db.find(Measurement.class, new QueryRule(Measurement.ID, Operator.EQUALS, predictorID)).get(0);
-
 		ComputeProtocol cp = db.find(ComputeProtocol.class,
 				new QueryRule(ComputeProtocol.NAME, Operator.EQUALS, predictionModel)).get(0);
-
 		cp.getFeatures_Id().remove(m.getId());
 		cp.getFeatures_Name().remove(m.getName());
 		db.update(cp);

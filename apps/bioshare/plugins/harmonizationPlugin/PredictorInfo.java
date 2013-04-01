@@ -82,7 +82,8 @@ public class PredictorInfo
 			for (int i = allMappings.size(); i > 0; i--)
 			{
 				LinkedInformation eachRow = allMappings.get(i - 1);
-				String expandedQuery = eachRow.getExpandedQuery();
+				// String expandedQuery = eachRow.getExpandedQuery();
+				String expandedQuery = eachRow.getDisplayedLabel();
 				Integer featureID = eachRow.getFeatureID();
 				double similarity = eachRow.getSimilarity();
 				SimilarityScore similarityScore = new SimilarityScore(featureID, expandedQuery);

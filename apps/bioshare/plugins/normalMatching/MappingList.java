@@ -8,30 +8,62 @@ import java.util.Map;
 
 public class MappingList
 {
-	private Map<ExpandedQueryObject, Double> uniqueElements = new HashMap<ExpandedQueryObject, Double>();
+	// private Map<ExpandedQueryObject, Double> uniqueElements = new
+	// HashMap<ExpandedQueryObject, Double>();
+	private Map<Integer, ExpandedQueryObject> uniqueElements = new HashMap<Integer, ExpandedQueryObject>();
 
-	public void add(String expandedQuery, Integer featureID, double similarity) throws Exception
+	public void add(String expandedQuery, String displayedLabel, Integer featureID, double similarity) throws Exception
 	{
 		if (expandedQuery == null || featureID == null) throw new Exception("Parameters have to be not null!");
 		if (expandedQuery.isEmpty()) throw new Exception("Parameters have to be not empty");
-		ExpandedQueryObject uniqueMapping = new ExpandedQueryObject(expandedQuery, featureID);
-		if (uniqueElements.containsKey(uniqueMapping))
+
+		if (uniqueElements.containsKey(featureID))
 		{
-			if (similarity > uniqueElements.get(uniqueMapping)) uniqueElements.put(uniqueMapping, similarity);
+			if (similarity > uniqueElements.get(featureID).getSimilarity())
+			{
+				uniqueElements.get(featureID).setExpandedQuery(expandedQuery);
+				uniqueElements.get(featureID).setDisplayedLabel(displayedLabel);
+				uniqueElements.get(featureID).setSimilarity(similarity);
+			}
 		}
 		else
-			uniqueElements.put(uniqueMapping, similarity);
+		{
+			ExpandedQueryObject uniqueMapping = new ExpandedQueryObject(expandedQuery, displayedLabel, featureID);
+			uniqueMapping.setSimilarity(similarity);
+			uniqueElements.put(featureID, uniqueMapping);
+		}
+		// if (uniqueElements.containsKey(uniqueMapping))
+		// {
+		// if (similarity > uniqueElements.get(uniqueMapping))
+		// uniqueElements.put(uniqueMapping, similarity);
+		// }
+		// else
+		// uniqueElements.put(uniqueMapping, similarity);
+
+	}
+
+	public void updateScore(Integer featureID, double similarity)
+	{
+		if (uniqueElements.containsKey(featureID)) uniqueElements.get(featureID).setSimilarity(similarity);
 	}
 
 	public List<LinkedInformation> getSortedInformation()
 	{
 		List<LinkedInformation> sortedLinks = new ArrayList<LinkedInformation>(uniqueElements.size());
 
-		for (Map.Entry<ExpandedQueryObject, Double> entry : uniqueElements.entrySet())
+		for (Map.Entry<Integer, ExpandedQueryObject> entry : uniqueElements.entrySet())
 		{
-			sortedLinks.add(new LinkedInformation(entry.getKey().getExpandedQuery(), entry.getKey().getFeatureID(),
-					entry.getValue()));
+			sortedLinks.add(new LinkedInformation(entry.getValue().getExpandedQuery(), entry.getValue()
+					.getDisplayedLabel(), entry.getKey(), entry.getValue().getSimilarity()));
 		}
+		// for (Map.Entry<ExpandedQueryObject, Double> entry :
+		// uniqueElements.entrySet())
+		// {
+		// sortedLinks.add(new
+		// LinkedInformation(entry.getKey().getExpandedQuery(),
+		// entry.getKey().getDisplayedLabel(),
+		// entry.getKey().getFeatureID(), entry.getValue()));
+		// }
 		Collections.sort(sortedLinks);
 		return (sortedLinks.size() > 5000 ? sortedLinks.subList(sortedLinks.size() - 5000, sortedLinks.size())
 				: sortedLinks);
@@ -39,12 +71,15 @@ public class MappingList
 
 	private static class ExpandedQueryObject
 	{
-		private final String expandedQuery;
 		private final Integer featureID;
+		private String expandedQuery;
+		private String displayedLabel;
+		private double similarity;
 
-		public ExpandedQueryObject(String expandedQuery, Integer featureID)
+		public ExpandedQueryObject(String expandedQuery, String displayedLabel, Integer featureID)
 		{
 			this.expandedQuery = expandedQuery;
+			this.displayedLabel = displayedLabel;
 			this.featureID = featureID;
 		}
 
@@ -83,9 +118,34 @@ public class MappingList
 			return expandedQuery;
 		}
 
+		public String getDisplayedLabel()
+		{
+			return displayedLabel;
+		}
+
 		public Integer getFeatureID()
 		{
 			return featureID;
+		}
+
+		public double getSimilarity()
+		{
+			return similarity;
+		}
+
+		public void setSimilarity(double similarity)
+		{
+			this.similarity = similarity;
+		}
+
+		public void setExpandedQuery(String expandedQuery)
+		{
+			this.expandedQuery = expandedQuery;
+		}
+
+		public void setDisplayedLabel(String displayedLabel)
+		{
+			this.displayedLabel = displayedLabel;
 		}
 	}
 }

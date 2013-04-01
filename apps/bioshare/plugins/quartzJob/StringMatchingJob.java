@@ -57,8 +57,8 @@ public class StringMatchingJob implements StatefulJob
 		{
 			for (Set<String> eachNGrams : measurementMap.get(featureID))
 			{
-				if (eachNGrams.size() != 0) mappingList.add(eachQueryEntry.getValue(), featureID,
-						matchingModel.calculateScore(eachNGrams, tokens));
+				if (eachNGrams.size() != 0) mappingList.add(eachQueryEntry.getKey(), eachQueryEntry.getValue(),
+						featureID, matchingModel.calculateScore(eachNGrams, tokens));
 			}
 		}
 	}
