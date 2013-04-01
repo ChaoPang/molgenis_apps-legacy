@@ -191,7 +191,7 @@ public class LuceneMatching
 							.parse(matchingString), BooleanClause.Occur.SHOULD);
 					q.add(new QueryParser(Version.LUCENE_30, "category", new PorterStemAnalyzer())
 							.parse(matchingString), BooleanClause.Occur.SHOULD);
-					TopScoreDocCollector collector = TopScoreDocCollector.create(10, true);
+					TopScoreDocCollector collector = TopScoreDocCollector.create(100, true);
 					luceneSearcher.search(q, collector);
 					ScoreDoc[] hits = collector.topDocs().scoreDocs;
 					for (ScoreDoc hit : hits)
