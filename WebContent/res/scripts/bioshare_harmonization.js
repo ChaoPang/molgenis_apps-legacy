@@ -452,15 +452,14 @@ function insertNewRow(url)
 		data["description"] = $('#descriptionOfPredictor').val();
 		data["dataType"] = $('#dataTypeOfPredictor').val();
 		data["unit_name"] = $('#unitOfPredictor').val();
-		data["categories_name"] = uniqueElementToString($('#categoryOfPredictor').val().split(","), ",");
-
-		buildingBlockString = uniqueElementToString($('#buildingBlocks').val().split(";"), ";");
-
-		data["buildingBlocks"] = uniqueElementToString(buildingBlockString.split(","), ",");
-
+		data["categories_name"] = $('#categoryOfPredictor').val();
+//		data["categories_name"] = uniqueElementToString($('#categoryOfPredictor').val().split(","), ",");
+//		buildingBlockString = uniqueElementToString($('#buildingBlocks').val().split(";"), ";");
+//		data["buildingBlocks"] = uniqueElementToString(buildingBlockString.split(","), ",");
+		data["buildingBlocks"] = $('#buildingBlocks').val();
+		data["leadingElement"] = $('#leadingElement').val();
 		//add the data to table
 		identifier = data["name"].replace(/\s/g,"_");
-		
 		data["identifier"] = identifier;
 
 		$.ajax({
@@ -529,6 +528,7 @@ function populateRowInTable(data, url)
 		categories = data["category"];
 		unit = data["unit"];
 		buildingBlocks = data["buildingBlocks"];
+		leadingElement = data["leadingElement"];
 		
 		row = "<tr><th class=\"ui-corner-all\">ID:</td>";
 		row += "<td class=\"ui-corner-all\">" + identifier + "<div style=\"cursor:pointer;height:16px;width:16px;" 
@@ -545,7 +545,7 @@ function populateRowInTable(data, url)
 
 		if(buildingBlocks != "" && buildingBlocks != null)
 		{
-			selectBlocks = "";
+			var selectBlocks = "";
 			for( var i = 0 ; i < buildingBlocks.split(";").length ; i++)
 			{
 				eachDefinition = buildingBlocks.split(";")[i];
@@ -555,6 +555,13 @@ function populateRowInTable(data, url)
 			
 			row += "<tr><th class=\"ui-corner-all\">Building blocks:</td>"
 				+ "<td id=\"variableBuildingBlocks\" name=\"variableBuildingBlocks\" class=\"ui-corner-all\">" + selectBlocks + "</td></tr>";
+		}
+		
+		if(leadingElement != "" && leadingElement != null)
+		{
+			var selectElements = createMultipleSelect(leadingElement.split(";"));
+			row += "<tr><th class=\"ui-corner-all\">Leading element:</td>"
+				+ "<td id=\"variableLeadingElement\" name=\"variableLeadingElement\" class=\"ui-corner-all\">" + selectElements + "</td></tr>";
 		}
 		
 		row += "<tr><td></td><td><input type=\"button\" id=\"matchSelectedVariable\"  style=\"margin-left:250px;\"" 

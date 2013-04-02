@@ -92,11 +92,11 @@ public class LuceneIndexerTest
 	{
 		IndexReader reader = IndexReader.open(FSDirectory.open(indexDirectory), true);
 		IndexSearcher searcher = new IndexSearcher(reader);
-		TopScoreDocCollector collector = TopScoreDocCollector.create(1000, true);
+		TopScoreDocCollector collector = TopScoreDocCollector.create(50, true);
 		BooleanQuery q = new BooleanQuery();
-		String query_one = "smoker cigarette currently";
-		String query_two = "what";
-		q.add(new QueryParser(Version.LUCENE_30, "investigation", new PorterStemAnalyzer()).parse("kora-gen"),
+		String query_one = "ATC code A10";
+		String query_two = "cigarette smoke";
+		q.add(new QueryParser(Version.LUCENE_30, "investigation", new PorterStemAnalyzer()).parse("prevend"),
 				BooleanClause.Occur.MUST);
 		q.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse(query_one),
 				BooleanClause.Occur.SHOULD);
@@ -110,7 +110,7 @@ public class LuceneIndexerTest
 			int docId = hits[i].doc;
 			double score = hits[i].score;
 			Document d = searcher.doc(docId);
-			System.out.println((i + 1) + ". " + d.get("measurementID") + "\t" + score);
+			System.out.println((i + 1) + ". " + d.get("measurement") + "\t" + score);
 		}
 		reader.close();
 		searcher.close();

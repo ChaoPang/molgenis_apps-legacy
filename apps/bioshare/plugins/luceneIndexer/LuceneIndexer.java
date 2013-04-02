@@ -129,7 +129,7 @@ public class LuceneIndexer extends PluginModel<Entity>
 						document.add(new Field("type", "dataItem", Field.Store.YES, Field.Index.NOT_ANALYZED));
 						document.add(new Field("measurementID", m.getId().toString(), Field.Store.YES,
 								Field.Index.NOT_ANALYZED));
-						document.add(new Field("measurement", m.getDescription().toLowerCase(), Field.Store.NO,
+						document.add(new Field("measurement", m.getDescription().toLowerCase(), Field.Store.YES,
 								Field.Index.ANALYZED));
 						document.add(new Field("investigation", m.getInvestigation_Name().toLowerCase(),
 								Field.Store.YES, Field.Index.ANALYZED));
@@ -167,7 +167,7 @@ public class LuceneIndexer extends PluginModel<Entity>
 			throws IOException
 	{
 		List<List<String>> potentialTokens = CreatePotentialTerms.getTermsLists(Arrays.asList(originalText.split(" ")));
-		Map<String, String> expandedQueries = model.combineTermByIndex(potentialTokens, false);
+		Map<String, String> expandedQueries = model.combineTermByIndex(potentialTokens, null, false);
 		for (String descriptionExpansion : expandedQueries.keySet())
 		{
 			document.add(new Field(fieldName, descriptionExpansion.toLowerCase(), Field.Store.YES, Field.Index.ANALYZED));

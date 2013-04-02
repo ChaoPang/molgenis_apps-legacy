@@ -63,28 +63,29 @@ public class LuceneMatching
 		luceneSearcher = new IndexSearcher(luceneReader);
 	}
 
-	private Map<String, String> getTermExpansion(List<String> buildingBlocks) throws IOException
+	private Map<String, String> getTermExpansion(List<String> buildingBlocks, String leadingElement) throws IOException
 	{
 		List<List<String>> potentialBlocks = new ArrayList<List<String>>();
 		for (String eachBlock : buildingBlocks)
 		{
 			potentialBlocks.add(Arrays.asList(eachBlock.split(",")));
 		}
-		return combineTermByIndex(potentialBlocks, true);
+		return combineTermByIndex(potentialBlocks, leadingElement, true);
 	}
 
-	private Map<String, String> getTermExpansion(String predictorLabel) throws IOException
+	private Map<String, String> getTermExpansion(String predictorLabel, String leadingElement) throws IOException
 	{
 		List<List<String>> potentialBlocks = CreatePotentialTerms
 				.getTermsLists(Arrays.asList(predictorLabel.split(" ")));
-		return combineTermByIndex(potentialBlocks, true);
+		return combineTermByIndex(potentialBlocks, leadingElement, true);
 	}
 
-	public Map<String, String> combineTermByIndex(List<List<String>> potentialBlocks, boolean includeChildren)
-			throws IOException
+	public Map<String, String> combineTermByIndex(List<List<String>> potentialBlocks, String leadingElement,
+			boolean includeChildren) throws IOException
 	{
 		Map<String, String> expandedQueries = new HashMap<String, String>();
 		Map<String, Set<OntologyTermContainer>> mapForBlocks = new HashMap<String, Set<OntologyTermContainer>>();
+		Set<OntologyTermContainer> boostedTerms = getOntologyTermsFromIndex(leadingElement);
 		boolean possibleBlocks = false;
 		for (List<String> eachSetOfBlocks : potentialBlocks)
 		{
@@ -102,7 +103,7 @@ public class LuceneMatching
 				if (mapForBlocks.get(eachBlock).size() > 0) possibleBlocks = true;
 			}
 			if (possibleBlocks) expandedQueries.putAll(TermExpansionJob.resursiveCombineList(mapForBlocks,
-					new HashMap<String, String>()));
+					new HashMap<String, String>(), boostedTerms));
 		}
 		return expandedQueries;
 	}
@@ -166,6 +167,10 @@ public class LuceneMatching
 				ontologyContainer.getSynonyms().add(synonym);
 			if (!listOfOntologyTerms.contains(ontologyContainer)) listOfOntologyTerms.add(ontologyContainer);
 		}
+		OntologyTermContainer ontologyContainer = new OntologyTermContainer("local", new ArrayList<String>(),
+				eachBlock, eachBlock);
+		ontologyContainer.getSynonyms().add(eachBlock.toLowerCase());
+		if (!listOfOntologyTerms.contains(ontologyContainer)) listOfOntologyTerms.add(ontologyContainer);
 		return listOfOntologyTerms;
 	}
 
@@ -214,10 +219,11 @@ public class LuceneMatching
 	{
 		for (PredictorInfo predictor : model.getPredictors().values())
 		{
+			String leadingElement = predictor.getLeadingElement();
 			if (predictor.getBuildingBlocks().size() > 0) predictor.getExpandedQuery().putAll(
-					getTermExpansion(predictor.getBuildingBlocks()));
+					getTermExpansion(predictor.getBuildingBlocks(), leadingElement));
 			else
-				predictor.getExpandedQuery().putAll(getTermExpansion(predictor.getLabel()));
+				predictor.getExpandedQuery().putAll(getTermExpansion(predictor.getLabel(), leadingElement));
 			predictor.getExpandedQuery().put(predictor.getLabel(), predictor.getLabel());
 			Map<String, MappingList> mappingsForStudies = new HashMap<String, MappingList>();
 			Map<String, String> expandedQueries = predictor.getExpandedQuery();

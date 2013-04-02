@@ -91,8 +91,8 @@ public class TermExpansionJob implements Job
 					if (mapForBlocks.get(eachBlock).size() > 1) possibleBlocks = true;
 				}
 			}
-			if (possibleBlocks) expandedQueries
-					.putAll(resursiveCombineList(mapForBlocks, new HashMap<String, String>()));
+			if (possibleBlocks) expandedQueries.putAll(resursiveCombineList(mapForBlocks,
+					new HashMap<String, String>(), null));
 		}
 		return expandedQueries;
 	}
@@ -109,12 +109,12 @@ public class TermExpansionJob implements Job
 				mapForBlocks.put(eachBlock, collectInfoFromOntology(eachBlock.toLowerCase().trim(), model, os));
 			}
 		}
-		expandedQueries.putAll(resursiveCombineList(mapForBlocks, new HashMap<String, String>()));
+		expandedQueries.putAll(resursiveCombineList(mapForBlocks, new HashMap<String, String>(), null));
 		return expandedQueries;
 	}
 
 	public static Map<String, String> resursiveCombineList(Map<String, Set<OntologyTermContainer>> mapForBlocks,
-			Map<String, String> combinedLists)
+			Map<String, String> combinedLists, Set<OntologyTermContainer> boostedTerms)
 	{
 		Map<String, String> newCombinedLists = new HashMap<String, String>();
 		if (mapForBlocks.size() > 0)
@@ -148,11 +148,15 @@ public class TermExpansionJob implements Job
 				{
 					for (OntologyTermContainer ontologyTerm : entry.getValue())
 					{
+						boolean boosted = false;
+						if (boostedTerms != null && boostedTerms.contains(ontologyTerm)) boosted = true;
+
 						String ontologyTermId = ontologyTerm.getOntologyTermID();
 						if (!ontologyTerm.getSynonyms().contains(ontologyTerm.getLabel())) ontologyTerm.getSynonyms()
 								.add(ontologyTerm.getLabel());
 						for (String eachSynonym : ontologyTerm.getSynonyms())
 						{
+							if (boosted) eachSynonym = eachSynonym + "^2";
 							StringBuilder matchedString = new StringBuilder();
 							StringBuilder displayedString = new StringBuilder();
 							if (combinedLists.size() == 0)
@@ -182,7 +186,8 @@ public class TermExpansionJob implements Job
 			}
 			if (lastKey != null) mapForBlocks.remove(lastKey);
 		}
-		if (mapForBlocks.size() > 0) newCombinedLists = resursiveCombineList(mapForBlocks, newCombinedLists);
+		if (mapForBlocks.size() > 0) newCombinedLists = resursiveCombineList(mapForBlocks, newCombinedLists,
+				boostedTerms);
 
 		return newCombinedLists;
 	}
