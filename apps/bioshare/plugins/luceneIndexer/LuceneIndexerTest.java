@@ -92,16 +92,51 @@ public class LuceneIndexerTest
 	{
 		IndexReader reader = IndexReader.open(FSDirectory.open(indexDirectory), true);
 		IndexSearcher searcher = new IndexSearcher(reader);
-		TopScoreDocCollector collector = TopScoreDocCollector.create(1000, true);
+		TopScoreDocCollector collector = TopScoreDocCollector.create(100, true);
 		BooleanQuery q = new BooleanQuery();
-		String query_one = "smoker cigarette currently";
-		String query_two = "what";
-		q.add(new QueryParser(Version.LUCENE_30, "investigation", new PorterStemAnalyzer()).parse("kora-gen"),
+		List<String> query_one = Arrays.asList("current", "currently");
+		List<String> query_two = Arrays.asList("smoker");
+		List<String> query_three = Arrays.asList("cigarette", "beedi");
+
+		q.add(new QueryParser(Version.LUCENE_30, "investigation", new PorterStemAnalyzer()).parse("ncd"),
 				BooleanClause.Occur.MUST);
-		q.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse(query_one),
+		BooleanQuery groupQuery = new BooleanQuery();
+		groupQuery.add(new QueryParser(Version.LUCENE_30, "category", new PorterStemAnalyzer()).parse("current"),
 				BooleanClause.Occur.SHOULD);
-		q.add(new QueryParser(Version.LUCENE_30, "category", new PorterStemAnalyzer()).parse(query_one),
+		groupQuery.add(new QueryParser(Version.LUCENE_30, "category", new PorterStemAnalyzer()).parse("cigarette"),
 				BooleanClause.Occur.SHOULD);
+		groupQuery.add(new QueryParser(Version.LUCENE_30, "category", new PorterStemAnalyzer()).parse("smoke"),
+				BooleanClause.Occur.SHOULD);
+		q.add(groupQuery, BooleanClause.Occur.MUST);
+		// q.add(new QueryParser(Version.LUCENE_30, "measurement", new
+		// PorterStemAnalyzer())
+		// .parse("current cigarette smoke"), BooleanClause.Occur.SHOULD);
+		// q.add(new QueryParser(Version.LUCENE_30, "category", new
+		// PorterStemAnalyzer()).parse("current cigarette smoke"),
+		// BooleanClause.Occur.MUST);
+		// groupQuery.add(combineQueries(query_two), BooleanClause.Occur.MUST);
+		// groupQuery.add(combineQueries(query_three),
+		// BooleanClause.Occur.MUST);
+		// q.add(groupQuery, BooleanClause.Occur.MUST);
+		// q.add(new QueryParser(Version.LUCENE_30, "measurement", new
+		// PorterStemAnalyzer())
+		// .parse("current smoke cigarette"), BooleanClause.Occur.SHOULD);
+		//
+		// q.add(new QueryParser(Version.LUCENE_30, "category", new
+		// PorterStemAnalyzer()).parse("current smoke cigarette"),
+		// BooleanClause.Occur.SHOULD);
+		// q.add(new QueryParser(Version.LUCENE_30, "measurement", new
+		// PorterStemAnalyzer()).parse("current"),
+		// BooleanClause.Occur.MUST);
+		// q.add(new QueryParser(Version.LUCENE_30, "measurement", new
+		// PorterStemAnalyzer()).parse("cigarette"),
+		// BooleanClause.Occur.MUST);
+		// q.add(new QueryParser(Version.LUCENE_30, "measurement", new
+		// PorterStemAnalyzer()).parse("smoker"),
+		// BooleanClause.Occur.MUST);
+		// q.add(new QueryParser(Version.LUCENE_30, "measurement", new
+		// PorterStemAnalyzer())
+		// .parse("current use of alcohol"), BooleanClause.Occur.SHOULD);
 		searcher.search(q, collector);
 		ScoreDoc[] hits = collector.topDocs().scoreDocs;
 		System.out.println("Found " + hits.length + " hits.");
@@ -110,10 +145,21 @@ public class LuceneIndexerTest
 			int docId = hits[i].doc;
 			double score = hits[i].score;
 			Document d = searcher.doc(docId);
-			System.out.println((i + 1) + ". " + d.get("measurementID") + "\t" + score);
+			System.out.println((i + 1) + ". " + d.get("measurement") + "\t" + score);
 		}
 		reader.close();
 		searcher.close();
+	}
+
+	public static BooleanQuery combineQueries(List<String> listOfQueries) throws ParseException
+	{
+		BooleanQuery group = new BooleanQuery();
+		for (String query : listOfQueries)
+		{
+			group.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse(query),
+					BooleanClause.Occur.SHOULD);
+		}
+		return group;
 	}
 
 	private static void searchIndexExact(File indexDirectory) throws CorruptIndexException, IOException, ParseException

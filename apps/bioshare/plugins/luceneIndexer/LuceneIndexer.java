@@ -9,9 +9,7 @@ package plugins.luceneIndexer;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -34,7 +32,6 @@ import org.molgenis.pheno.Category;
 import org.molgenis.pheno.Measurement;
 import org.molgenis.util.Entity;
 
-import plugins.harmonizationPlugin.CreatePotentialTerms;
 import plugins.luceneMatching.LuceneMatching;
 
 //import plugins.autohidelogin.AutoHideLoginModel; 
@@ -129,12 +126,14 @@ public class LuceneIndexer extends PluginModel<Entity>
 						document.add(new Field("type", "dataItem", Field.Store.YES, Field.Index.NOT_ANALYZED));
 						document.add(new Field("measurementID", m.getId().toString(), Field.Store.YES,
 								Field.Index.NOT_ANALYZED));
-						document.add(new Field("measurement", m.getDescription().toLowerCase(), Field.Store.NO,
+						document.add(new Field("measurement", m.getDescription().toLowerCase(), Field.Store.YES,
 								Field.Index.ANALYZED));
 						document.add(new Field("investigation", m.getInvestigation_Name().toLowerCase(),
 								Field.Store.YES, Field.Index.ANALYZED));
-						if (inv.getName().equalsIgnoreCase("finRisk")) addExpansionToDocument(model,
-								m.getDescription(), "measurementExpansion", document);
+						// if (inv.getName().equalsIgnoreCase("finRisk"))
+						// addExpansionToDocument(model,
+						// m.getDescription(), "measurementExpansion",
+						// document);
 
 						if (m.getCategories_Name().size() > 0)
 						{
@@ -142,14 +141,11 @@ public class LuceneIndexer extends PluginModel<Entity>
 							{
 								document.add(new Field("category", c.getDescription().toLowerCase(), Field.Store.NO,
 										Field.Index.ANALYZED));
-								// StringBuilder combinedDescription = new
-								// StringBuilder();
-								// document.add(new Field("category",
-								// combinedDescription
-								// .append(m.getDescription().toLowerCase()).append(' ')
-								// .append(c.getDescription().toLowerCase()).toString(),
-								// Field.Store.NO,
-								// Field.Index.ANALYZED));
+								StringBuilder combinedDescription = new StringBuilder();
+								document.add(new Field("category", combinedDescription
+										.append(m.getDescription().toLowerCase()).append(' ')
+										.append(c.getDescription().toLowerCase()).toString(), Field.Store.NO,
+										Field.Index.ANALYZED));
 							}
 						}
 						writer.addDocument(document);
@@ -163,16 +159,20 @@ public class LuceneIndexer extends PluginModel<Entity>
 		}
 	}
 
-	private void addExpansionToDocument(LuceneMatching model, String originalText, String fieldName, Document document)
-			throws IOException
-	{
-		List<List<String>> potentialTokens = CreatePotentialTerms.getTermsLists(Arrays.asList(originalText.split(" ")));
-		Map<String, String> expandedQueries = model.combineTermByIndex(potentialTokens, false);
-		for (String descriptionExpansion : expandedQueries.keySet())
-		{
-			document.add(new Field(fieldName, descriptionExpansion.toLowerCase(), Field.Store.YES, Field.Index.ANALYZED));
-		}
-	}
+	// private void addExpansionToDocument(LuceneMatching model, String
+	// originalText, String fieldName, Document document)
+	// throws IOException
+	// {
+	// List<List<String>> potentialTokens =
+	// CreatePotentialTerms.getTermsLists(Arrays.asList(originalText.split(" ")));
+	// Map<String, String> expandedQueries =
+	// model.combineTermByIndex(potentialTokens, false);
+	// for (String descriptionExpansion : expandedQueries.keySet())
+	// {
+	// document.add(new Field(fieldName, descriptionExpansion.toLowerCase(),
+	// Field.Store.YES, Field.Index.ANALYZED));
+	// }
+	// }
 
 	private List<Category> findCategoriesByName(List<String> categories_Name, Database db) throws DatabaseException
 	{

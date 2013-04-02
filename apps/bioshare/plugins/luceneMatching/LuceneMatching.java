@@ -37,7 +37,6 @@ import plugins.luceneIndexer.PorterStemAnalyzer;
 import plugins.normalMatching.LinkedInformation;
 import plugins.normalMatching.MappingList;
 import plugins.ontologyTermInfo.OntologyTermContainer;
-import plugins.quartzJob.TermExpansionJob;
 
 public class LuceneMatching
 {
@@ -63,7 +62,8 @@ public class LuceneMatching
 		luceneSearcher = new IndexSearcher(luceneReader);
 	}
 
-	private Map<String, String> getTermExpansion(List<String> buildingBlocks) throws IOException
+	private List<Map<String, Set<OntologyTermContainer>>> getTermExpansion(List<String> buildingBlocks)
+			throws IOException
 	{
 		List<List<String>> potentialBlocks = new ArrayList<List<String>>();
 		for (String eachBlock : buildingBlocks)
@@ -73,21 +73,20 @@ public class LuceneMatching
 		return combineTermByIndex(potentialBlocks, true);
 	}
 
-	private Map<String, String> getTermExpansion(String predictorLabel) throws IOException
+	private List<Map<String, Set<OntologyTermContainer>>> getTermExpansion(String predictorLabel) throws IOException
 	{
 		List<List<String>> potentialBlocks = CreatePotentialTerms
 				.getTermsLists(Arrays.asList(predictorLabel.split(" ")));
 		return combineTermByIndex(potentialBlocks, true);
 	}
 
-	public Map<String, String> combineTermByIndex(List<List<String>> potentialBlocks, boolean includeChildren)
-			throws IOException
+	public List<Map<String, Set<OntologyTermContainer>>> combineTermByIndex(List<List<String>> potentialBlocks,
+			boolean includeChildren) throws IOException
 	{
-		Map<String, String> expandedQueries = new HashMap<String, String>();
-		Map<String, Set<OntologyTermContainer>> mapForBlocks = new HashMap<String, Set<OntologyTermContainer>>();
-		boolean possibleBlocks = false;
+		List<Map<String, Set<OntologyTermContainer>>> listOfDefinitions = new ArrayList<Map<String, Set<OntologyTermContainer>>>();
 		for (List<String> eachSetOfBlocks : potentialBlocks)
 		{
+			Map<String, Set<OntologyTermContainer>> definition = new HashMap<String, Set<OntologyTermContainer>>();
 			for (String eachBlock : eachSetOfBlocks)
 			{
 				Set<OntologyTermContainer> listOfOntologyTerms = null;
@@ -98,14 +97,49 @@ public class LuceneMatching
 				for (OntologyTermContainer ontologyTerm : listOfOntologyTerms)
 					if (model != null && !model.getCachedOntologyTerms().containsKey(ontologyTerm.getOntologyTermID())) model
 							.getCachedOntologyTerms().put(ontologyTerm.getOntologyTermID(), ontologyTerm);
-				mapForBlocks.put(eachBlock, listOfOntologyTerms);
-				if (mapForBlocks.get(eachBlock).size() > 0) possibleBlocks = true;
+				if (!definition.containsKey(eachBlock.toLowerCase()))
+				{
+					definition.put(eachBlock.toLowerCase(), listOfOntologyTerms);
+				}
 			}
-			if (possibleBlocks) expandedQueries.putAll(TermExpansionJob.resursiveCombineList(mapForBlocks,
-					new HashMap<String, String>()));
+			listOfDefinitions.add(definition);
 		}
-		return expandedQueries;
+		return listOfDefinitions;
 	}
+
+	// public Map<String, String> combineTermByIndex(List<List<String>>
+	// potentialBlocks, boolean includeChildren)
+	// throws IOException
+	// {
+	// Map<String, String> expandedQueries = new HashMap<String, String>();
+	// Map<String, Set<OntologyTermContainer>> mapForBlocks = new
+	// HashMap<String, Set<OntologyTermContainer>>();
+	// boolean possibleBlocks = false;
+	// for (List<String> eachSetOfBlocks : potentialBlocks)
+	// {
+	// for (String eachBlock : eachSetOfBlocks)
+	// {
+	// Set<OntologyTermContainer> listOfOntologyTerms = null;
+	// if (includeChildren) listOfOntologyTerms =
+	// getOntologyTermsFromIndex(eachBlock);
+	// else
+	// listOfOntologyTerms = getOntologyTermSynonymsFromIndex(eachBlock);
+	//
+	// for (OntologyTermContainer ontologyTerm : listOfOntologyTerms)
+	// if (model != null &&
+	// !model.getCachedOntologyTerms().containsKey(ontologyTerm.getOntologyTermID()))
+	// model
+	// .getCachedOntologyTerms().put(ontologyTerm.getOntologyTermID(),
+	// ontologyTerm);
+	// mapForBlocks.put(eachBlock, listOfOntologyTerms);
+	// if (mapForBlocks.get(eachBlock).size() > 0) possibleBlocks = true;
+	// }
+	// if (possibleBlocks)
+	// expandedQueries.putAll(TermExpansionJob.resursiveCombineList(mapForBlocks,
+	// new HashMap<String, String>()));
+	// }
+	// return expandedQueries;
+	// }
 
 	public Set<String> searchForOntologyTermPaths(String eachBlock) throws IOException
 	{
@@ -142,6 +176,9 @@ public class LuceneMatching
 				ontologyContainer.getSynonyms().add(synonym);
 			if (!listOfOntologyTerms.contains(ontologyContainer)) listOfOntologyTerms.add(ontologyContainer);
 		}
+		OntologyTermContainer originalTerm = new OntologyTermContainer("original", new ArrayList<String>(),
+				eachBlock.toLowerCase(), "local");
+		listOfOntologyTerms.add(originalTerm);
 		return listOfOntologyTerms;
 	}
 
@@ -164,8 +201,14 @@ public class LuceneMatching
 					new ArrayList<String>(), d.get("ontologyTerm"), d.get("ontologyLabel"));
 			for (String synonym : d.getValues("ontologyTermSynonym"))
 				ontologyContainer.getSynonyms().add(synonym);
+			if (!ontologyContainer.getSynonyms().contains(eachBlock.toLowerCase())) ontologyContainer.getSynonyms()
+					.add(eachBlock.toLowerCase());
 			if (!listOfOntologyTerms.contains(ontologyContainer)) listOfOntologyTerms.add(ontologyContainer);
 		}
+		OntologyTermContainer originalTerm = new OntologyTermContainer("original", new ArrayList<String>(),
+				eachBlock.toLowerCase(), "local");
+		originalTerm.getSynonyms().add(eachBlock.toLowerCase());
+		listOfOntologyTerms.add(originalTerm);
 		return listOfOntologyTerms;
 	}
 
@@ -178,7 +221,7 @@ public class LuceneMatching
 		Map<String, String> expandedQueries = new HashMap<String, String>();
 		for (LinkedInformation info : mapping.getSortedInformation())
 		{
-			if (iterationNumber < 100)
+			if (iterationNumber < 1000)
 			{
 				if (!expandedQueries.containsKey(info.getExpandedQuery())) expandedQueries.put(info.getExpandedQuery(),
 						info.getDisplayedLabel());
@@ -210,32 +253,79 @@ public class LuceneMatching
 		}
 	}
 
+	public BooleanQuery createQueriesFromOntologyTerm(String originalTerm,
+			Set<OntologyTermContainer> listOfOntologyTerms, int maxClauses) throws ParseException
+	{
+		BooleanQuery queryPerTerm = new BooleanQuery();
+		for (OntologyTermContainer ontologyTerm : listOfOntologyTerms)
+		{
+			for (String synonym : ontologyTerm.getSynonyms())
+			{
+				if (BooleanQuery.getMaxClauseCount() > maxClauses) BooleanQuery.setMaxClauseCount(maxClauses * 2);
+				synonym = synonym.replaceAll("er ", "er~ ");
+				queryPerTerm.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer())
+						.parse(synonym.toLowerCase()), BooleanClause.Occur.SHOULD);
+				queryPerTerm.add(new QueryParser(Version.LUCENE_30, "category", new PorterStemAnalyzer()).parse(synonym
+						.toLowerCase()), BooleanClause.Occur.SHOULD);
+			}
+		}
+		return queryPerTerm;
+	}
+
 	public void getMatchingResult() throws NumberFormatException, Exception
 	{
 		for (PredictorInfo predictor : model.getPredictors().values())
 		{
-			if (predictor.getBuildingBlocks().size() > 0) predictor.getExpandedQuery().putAll(
-					getTermExpansion(predictor.getBuildingBlocks()));
+			List<Map<String, Set<OntologyTermContainer>>> ontologyTermExpansion = null;
+			if (predictor.getBuildingBlocks().size() > 0) ontologyTermExpansion = getTermExpansion(predictor
+					.getBuildingBlocks());
 			else
-				predictor.getExpandedQuery().putAll(getTermExpansion(predictor.getLabel()));
-			predictor.getExpandedQuery().put(predictor.getLabel(), predictor.getLabel());
+				ontologyTermExpansion = getTermExpansion(predictor.getLabel());
+
+			// predictor.getExpandedQuery().put(predictor.getLabel(),
+			// predictor.getLabel());
 			Map<String, MappingList> mappingsForStudies = new HashMap<String, MappingList>();
-			Map<String, String> expandedQueries = predictor.getExpandedQuery();
+			// Map<String, String> expandedQueries =
+			// predictor.getExpandedQuery();
 			for (String eachStudy : model.getSelectedValidationStudy())
 			{
 				MappingList mapping = new MappingList();
-				for (Entry<String, String> entry : expandedQueries.entrySet())
+				// for (Entry<String, String> entry :
+				// expandedQueries.entrySet())
+				// {
+				// BooleanQuery q = new BooleanQuery(true);
+				BooleanQuery finalQuery = new BooleanQuery();
+				finalQuery.add(new QueryParser(Version.LUCENE_30, "investigation", new PorterStemAnalyzer())
+						.parse(eachStudy.toLowerCase()), BooleanClause.Occur.MUST);
+				for (Map<String, Set<OntologyTermContainer>> eachDefinition : ontologyTermExpansion)
 				{
-					BooleanQuery q = new BooleanQuery(true);
-					String matchingString = entry.getKey().replaceAll("[^a-zA-Z0-9 ]", " ");
-					q.add(new QueryParser(Version.LUCENE_30, "investigation", new PorterStemAnalyzer()).parse(eachStudy
-							.toLowerCase()), BooleanClause.Occur.MUST);
-					q.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer())
-							.parse(matchingString), BooleanClause.Occur.SHOULD);
-					q.add(new QueryParser(Version.LUCENE_30, "category", new PorterStemAnalyzer())
-							.parse(matchingString), BooleanClause.Occur.SHOULD);
-					TopScoreDocCollector collector = TopScoreDocCollector.create(20, true);
-					luceneSearcher.search(q, collector);
+					// String matchingString =
+					// eachDefinition.getKey().replaceAll("[^a-zA-Z0-9 ]", " ");
+					BooleanQuery groupQuery = new BooleanQuery();
+					// BooleanQuery queryForOrigionalTerm = new BooleanQuery();
+					// queryForOrigionalTerm.add(new
+					// QueryParser(Version.LUCENE_30, "measurement",
+					// new
+					// PorterStemAnalyzer()).parse(matchingString.toLowerCase()),
+					// BooleanClause.Occur.SHOULD);
+					// queryForOrigionalTerm.add(new
+					// QueryParser(Version.LUCENE_30, "category", new
+					// PorterStemAnalyzer())
+					// .parse(matchingString.toLowerCase()),
+					// BooleanClause.Occur.SHOULD);
+					// groupQuery.add(queryForOrigionalTerm,
+					// BooleanClause.Occur.SHOULD);
+					int defaultMaxClauses = BooleanQuery.getMaxClauseCount();
+					for (Entry<String, Set<OntologyTermContainer>> entry : eachDefinition.entrySet())
+					{
+						groupQuery.add(
+								createQueriesFromOntologyTerm(entry.getKey(), entry.getValue(),
+										BooleanQuery.getMaxClauseCount()), BooleanClause.Occur.SHOULD);
+					}
+					finalQuery.add(groupQuery, BooleanClause.Occur.SHOULD);
+					BooleanQuery.setMaxClauseCount(defaultMaxClauses);
+					TopScoreDocCollector collector = TopScoreDocCollector.create(100, true);
+					luceneSearcher.search(finalQuery, collector);
 					ScoreDoc[] hits = collector.topDocs().scoreDocs;
 					for (ScoreDoc hit : hits)
 					{
@@ -244,10 +334,36 @@ public class LuceneMatching
 						Document d = luceneSearcher.doc(docId);
 						DecimalFormat df = new DecimalFormat("#0.000");
 						score = Double.parseDouble(df.format(score));
-						mapping.add(entry.getKey(), entry.getValue(), Integer.parseInt(d.get("measurementID")), score);
+						mapping.add(d.get("measurementID").toString(), "", Integer.parseInt(d.get("measurementID")),
+								score);
 					}
+					// String matchingString =
+					// entry.getKey().replaceAll("[^a-zA-Z0-9 ]", " ");
+					// q.add(new QueryParser(Version.LUCENE_30, "investigation",
+					// new PorterStemAnalyzer()).parse(eachStudy
+					// .toLowerCase()), BooleanClause.Occur.MUST);
+					// q.add(new QueryParser(Version.LUCENE_30, "measurement",
+					// new PorterStemAnalyzer())
+					// .parse(matchingString), BooleanClause.Occur.SHOULD);
+					// q.add(new QueryParser(Version.LUCENE_30, "category", new
+					// PorterStemAnalyzer())
+					// .parse(matchingString), BooleanClause.Occur.SHOULD);
+					// TopScoreDocCollector collector =
+					// TopScoreDocCollector.create(10, true);
+					// luceneSearcher.search(q, collector);
+					// ScoreDoc[] hits = collector.topDocs().scoreDocs;
+					// for (ScoreDoc hit : hits)
+					// {
+					// int docId = hit.doc;
+					// double score = hit.score;
+					// Document d = luceneSearcher.doc(docId);
+					// DecimalFormat df = new DecimalFormat("#0.000");
+					// score = Double.parseDouble(df.format(score));
+					// mapping.add(entry.getKey(), entry.getValue(),
+					// Integer.parseInt(d.get("measurementID")), score);
+					// }
 				}
-				normalizeScore(mapping, eachStudy);
+				// normalizeScore(mapping, eachStudy);
 				mappingsForStudies.put(eachStudy, mapping);
 				model.incrementFinishedJob();
 			}
