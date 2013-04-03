@@ -282,19 +282,18 @@ public class LuceneMatching
 					}
 					finalQuery.add(groupQuery, BooleanClause.Occur.SHOULD);
 					BooleanQuery.setMaxClauseCount(defaultMaxClauses);
-					TopScoreDocCollector collector = TopScoreDocCollector.create(100, true);
-					luceneSearcher.search(finalQuery, collector);
-					ScoreDoc[] hits = collector.topDocs().scoreDocs;
-					for (ScoreDoc hit : hits)
-					{
-						int docId = hit.doc;
-						double score = hit.score;
-						Document d = luceneSearcher.doc(docId);
-						DecimalFormat df = new DecimalFormat("#0.000");
-						score = Double.parseDouble(df.format(score));
-						mapping.add(d.get("measurementID").toString(), "", Integer.parseInt(d.get("measurementID")),
-								score);
-					}
+				}
+				TopScoreDocCollector collector = TopScoreDocCollector.create(100, true);
+				luceneSearcher.search(finalQuery, collector);
+				ScoreDoc[] hits = collector.topDocs().scoreDocs;
+				for (ScoreDoc hit : hits)
+				{
+					int docId = hit.doc;
+					double score = hit.score;
+					Document d = luceneSearcher.doc(docId);
+					DecimalFormat df = new DecimalFormat("#0.000");
+					score = Double.parseDouble(df.format(score));
+					mapping.add(d.get("measurementID").toString(), "", Integer.parseInt(d.get("measurementID")), score);
 				}
 				mappingsForStudies.put(eachStudy, mapping);
 				model.incrementFinishedJob();
