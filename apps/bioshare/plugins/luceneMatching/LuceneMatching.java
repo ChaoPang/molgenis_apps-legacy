@@ -145,9 +145,12 @@ public class LuceneMatching
 				ontologyContainer.getSynonyms().add(synonym);
 			if (!listOfOntologyTerms.contains(ontologyContainer)) listOfOntologyTerms.add(ontologyContainer);
 		}
-		OntologyTermContainer originalTerm = new OntologyTermContainer("original", new ArrayList<String>(),
-				eachBlock.toLowerCase(), "local");
-		listOfOntologyTerms.add(originalTerm);
+		if (listOfOntologyTerms.size() == 0)
+		{
+			OntologyTermContainer originalTerm = new OntologyTermContainer("original", new ArrayList<String>(),
+					eachBlock.toLowerCase(), "local");
+			listOfOntologyTerms.add(originalTerm);
+		}
 		return listOfOntologyTerms;
 	}
 
@@ -172,13 +175,17 @@ public class LuceneMatching
 					new ArrayList<String>(), d.get("ontologyTerm"), d.get("ontologyLabel"));
 			for (String synonym : d.getValues("ontologyTermSynonym"))
 				ontologyContainer.getSynonyms().add(synonym);
-			if (!ontologyContainer.getSynonyms().contains(eachBlock)) ontologyContainer.getSynonyms().add(eachBlock);
+			// if (!ontologyContainer.getSynonyms().contains(eachBlock))
+			// ontologyContainer.getSynonyms().add(eachBlock);
 			if (!listOfOntologyTerms.contains(ontologyContainer)) listOfOntologyTerms.add(ontologyContainer);
 		}
-		OntologyTermContainer originalTerm = new OntologyTermContainer("original-" + eachBlock,
-				new ArrayList<String>(), eachBlock, "local");
-		originalTerm.getSynonyms().add(eachBlock);
-		listOfOntologyTerms.add(originalTerm);
+		if (listOfOntologyTerms.size() == 0)
+		{
+			OntologyTermContainer originalTerm = new OntologyTermContainer("original-" + eachBlock,
+					new ArrayList<String>(), eachBlock, "local");
+			originalTerm.getSynonyms().add(eachBlock);
+			listOfOntologyTerms.add(originalTerm);
+		}
 		return listOfOntologyTerms;
 	}
 
@@ -235,11 +242,22 @@ public class LuceneMatching
 			if (boostedTerms != null && boostedTerms.contains(ontologyTerm)) boosted = true;
 			for (String synonym : ontologyTerm.getSynonyms())
 			{
-				if (!uniqueQuery.contains(synonym.toLowerCase()))
+				synonym = synonym.replaceAll("[^0-9a-zA-Z ]", "").trim().toLowerCase();
+				if (!uniqueQuery.contains(synonym))
 				{
 					uniqueQuery.add(synonym.toLowerCase());
-					if (boosted) synonym = synonym + "^4";
-					if (BooleanQuery.getMaxClauseCount() > maxClauses) BooleanQuery.setMaxClauseCount(maxClauses * 2);
+					if (boosted)
+					{
+						String[] terms = synonym.split(" ");
+						synonym = StringUtils.EMPTY;
+						for (String eachTerm : terms)
+						{
+							if (!eachTerm.replaceAll(" ", "").isEmpty()) synonym = synonym + eachTerm.trim() + "^4 ";
+						}
+						synonym = synonym.trim();
+					}
+					if (queryPerTerm.getClauses().length >= maxClauses - 2) BooleanQuery
+							.setMaxClauseCount(maxClauses * 2);
 					// synonym = synonym.replaceAll("er ", "er~ ");
 					queryPerTerm.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer())
 							.parse(synonym.toLowerCase()), BooleanClause.Occur.SHOULD);
