@@ -110,11 +110,11 @@ public class LuceneMatching
 		return listOfDefinitions;
 	}
 
-	public Set<String> searchForOntologyTermPaths(String eachBlock) throws IOException
+	public Set<String> searchForOntologyTermPaths(String eachBlock, String field) throws IOException
 	{
 		Set<String> nodePathSet = new HashSet<String>();
 		BooleanQuery q = new BooleanQuery();
-		q.add(new TermQuery(new Term("ontologyTerm", eachBlock.toLowerCase())), BooleanClause.Occur.MUST);
+		q.add(new TermQuery(new Term(field, eachBlock.toLowerCase())), BooleanClause.Occur.MUST);
 		TopScoreDocCollector collector = TopScoreDocCollector.create(1000, true);
 		luceneSearcher.search(q, collector);
 		ScoreDoc[] hits = collector.topDocs().scoreDocs;
@@ -160,7 +160,8 @@ public class LuceneMatching
 		if (eachBlock == null) eachBlock = StringUtils.EMPTY;
 		else
 			eachBlock = eachBlock.toLowerCase();
-		Set<String> nodePathSet = searchForOntologyTermPaths(eachBlock);
+		Set<String> nodePathSet = searchForOntologyTermPaths(eachBlock, "ontologyTerm");
+		if (nodePathSet.size() == 0) nodePathSet = searchForOntologyTermPaths(eachBlock, "ontologyTermSynonym");
 		BooleanQuery finalQuery = new BooleanQuery();
 		for (String nodePath : nodePathSet)
 			finalQuery.add(new WildcardQuery(new Term("nodePath", nodePath + "*")), Occur.SHOULD);
@@ -259,10 +260,12 @@ public class LuceneMatching
 					if (queryPerTerm.getClauses().length >= maxClauses - 2) BooleanQuery
 							.setMaxClauseCount(maxClauses * 2);
 					// synonym = synonym.replaceAll("er ", "er~ ");
-					queryPerTerm.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer())
-							.parse(synonym.toLowerCase()), BooleanClause.Occur.SHOULD);
-					queryPerTerm.add(new QueryParser(Version.LUCENE_30, "category", new PorterStemAnalyzer())
-							.parse(synonym.toLowerCase()), BooleanClause.Occur.SHOULD);
+					queryPerTerm.add(
+							new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse(synonym),
+							BooleanClause.Occur.SHOULD);
+					queryPerTerm.add(
+							new QueryParser(Version.LUCENE_30, "category", new PorterStemAnalyzer()).parse(synonym),
+							BooleanClause.Occur.SHOULD);
 				}
 			}
 		}
@@ -280,7 +283,12 @@ public class LuceneMatching
 				ontologyTermExpansion = getTermExpansion(predictor.getLabel());
 			String leadingElement = predictor.getLeadingElement();
 			Set<OntologyTermContainer> boostedTerms = null;
-			if (leadingElement != null) boostedTerms = getOntologyTermsFromIndex(leadingElement.toLowerCase());
+			if (leadingElement != null)
+			{
+				boostedTerms = new HashSet<OntologyTermContainer>();
+				for (String eachLeadingElement : leadingElement.split(";"))
+					boostedTerms.addAll(getOntologyTermsFromIndex(eachLeadingElement.trim()));
+			}
 			Map<String, MappingList> mappingsForStudies = new HashMap<String, MappingList>();
 			for (String eachStudy : model.getSelectedValidationStudy())
 			{
