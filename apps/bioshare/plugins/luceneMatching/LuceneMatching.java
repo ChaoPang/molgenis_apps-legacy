@@ -163,12 +163,10 @@ public class LuceneMatching
 			Document d = luceneSearcher.doc(docId);
 			OntologyTermContainer ontologyContainer = new OntologyTermContainer(d.get("ontologyTermIRI"),
 					new ArrayList<String>(), d.get("ontologyTerm"), d.get("ontologyLabel"));
-			for (String synonym : d.getValues("ontologyTermSynonym"))
-				ontologyContainer.getSynonyms().add(synonym);
 			if (!listOfOntologyTerms.contains(ontologyContainer)) listOfOntologyTerms.add(ontologyContainer);
 		}
-		OntologyTermContainer ontologyContainer = new OntologyTermContainer("local", new ArrayList<String>(),
-				eachBlock, eachBlock);
+		OntologyTermContainer ontologyContainer = new OntologyTermContainer("local-" + eachBlock.toLowerCase(),
+				new ArrayList<String>(), eachBlock, eachBlock);
 		ontologyContainer.getSynonyms().add(eachBlock.toLowerCase());
 		if (!listOfOntologyTerms.contains(ontologyContainer)) listOfOntologyTerms.add(ontologyContainer);
 		return listOfOntologyTerms;

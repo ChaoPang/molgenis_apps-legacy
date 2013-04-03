@@ -156,7 +156,7 @@ public class TermExpansionJob implements Job
 								.add(ontologyTerm.getLabel());
 						for (String eachSynonym : ontologyTerm.getSynonyms())
 						{
-							if (boosted) eachSynonym = eachSynonym + "^2";
+							if (boosted) eachSynonym = eachSynonym + "^4";
 							StringBuilder matchedString = new StringBuilder();
 							StringBuilder displayedString = new StringBuilder();
 							if (combinedLists.size() == 0)

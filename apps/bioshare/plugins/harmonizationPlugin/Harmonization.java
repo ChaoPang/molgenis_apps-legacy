@@ -635,8 +635,6 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 					if (ov.getFeature_Name().equalsIgnoreCase("LeadingElement")) this.getModel().getPredictors()
 							.get(m.getId()).setLeadingElement(ov.getValue());
 				}
-				if (query.find().size() > 0) this.getModel().getPredictors().get(m.getId())
-						.setBuildingBlocks(query.find().get(0).getValue().split(";"));
 			}
 		}
 	}
