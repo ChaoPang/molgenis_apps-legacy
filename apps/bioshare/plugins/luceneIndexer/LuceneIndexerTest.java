@@ -63,6 +63,7 @@ public class LuceneIndexerTest
 			OntologyServiceException, ParseException, DatabaseException, OWLOntologyCreationException
 	{
 		File indexDirectory = new File("/Users/chaopang/Desktop/TempIndex");
+
 		// System.out.println("Started index.....");
 		// File ontologyFolder = new
 		// File("/Users/chaopang/Desktop/Ontologies/");
@@ -71,8 +72,10 @@ public class LuceneIndexerTest
 		// boolean createIndex = removeExistingIndex(indexDirectory);
 		// IndexWriter writer = new
 		// IndexWriter(FSDirectory.open(indexDirectory), new KeywordAnalyzer(),
-		// createIndex,
+		// false,
 		// IndexWriter.MaxFieldLength.UNLIMITED);
+		// startIndexFromBioPortal(indexDirectory, Arrays.asList("Quantity",
+		// "Denominators of time"), writer);
 		// for (File ontologyFile : ontologyFolder.listFiles())
 		// if (ontologyFile.getName().toLowerCase().endsWith(".owl")
 		// || ontologyFile.getName().toLowerCase().endsWith(".obo"))
@@ -98,15 +101,22 @@ public class LuceneIndexerTest
 		List<String> query_two = Arrays.asList("smoker");
 		List<String> query_three = Arrays.asList("cigarette", "beedi");
 
-		q.add(new QueryParser(Version.LUCENE_30, "investigation", new PorterStemAnalyzer()).parse("ncd"),
+		q.add(new QueryParser(Version.LUCENE_30, "investigation", new PorterStemAnalyzer()).parse("finrisk"),
 				BooleanClause.Occur.MUST);
 		BooleanQuery groupQuery = new BooleanQuery();
-		groupQuery.add(new QueryParser(Version.LUCENE_30, "category", new PorterStemAnalyzer()).parse("current"),
+		groupQuery.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse("Current"),
 				BooleanClause.Occur.SHOULD);
-		groupQuery.add(new QueryParser(Version.LUCENE_30, "category", new PorterStemAnalyzer()).parse("cigarette"),
+		groupQuery.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse("quantity"),
 				BooleanClause.Occur.SHOULD);
-		groupQuery.add(new QueryParser(Version.LUCENE_30, "category", new PorterStemAnalyzer()).parse("smoke"),
+		groupQuery.add(
+				new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse("cigarette^4"),
 				BooleanClause.Occur.SHOULD);
+		groupQuery.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse("smoke"),
+				BooleanClause.Occur.SHOULD);
+
+		// groupQuery.add(new QueryParser(Version.LUCENE_30, "category", new
+		// PorterStemAnalyzer()).parse("smoke"),
+		// BooleanClause.Occur.SHOULD);
 		q.add(groupQuery, BooleanClause.Occur.MUST);
 		// q.add(new QueryParser(Version.LUCENE_30, "measurement", new
 		// PorterStemAnalyzer())
@@ -203,6 +213,18 @@ public class LuceneIndexerTest
 		}
 		reader.close();
 		searcher.close();
+	}
+
+	private static void startIndexFromBioPortal(File indexDirectory, List<String> listOfVariables, IndexWriter writer)
+			throws IOException, OntologyServiceException
+	{
+		Set<OntologyTerm> collectedOntologyTerms = new HashSet<OntologyTerm>();
+		for (String eachQuery : listOfVariables)
+		{
+			OntologyTerm ot = collectOntologyTermFromBioportal(eachQuery);
+			if (ot != null) collectedOntologyTerms.add(ot);
+		}
+		collectOntologyTermSubTree(collectedOntologyTerms, writer);
 	}
 
 	private static void startIndexFromBioPortal(File indexDirectory, File indexInfo, IndexWriter writer)

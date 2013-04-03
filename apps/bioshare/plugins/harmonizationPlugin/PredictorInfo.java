@@ -18,6 +18,7 @@ public class PredictorInfo
 	private String name = null;
 	private String label = null;
 	private String identifier = null;
+	private String leadingElement = null;
 	private List<String> buildingBlocks = new ArrayList<String>();
 	private Map<String, String> expandedQuery = new HashMap<String, String>();
 	private Map<String, Measurement> finalMappings = new HashMap<String, Measurement>();
@@ -38,6 +39,11 @@ public class PredictorInfo
 	public void setIdentifier(String identifier)
 	{
 		this.identifier = identifier;
+	}
+
+	public void setLeadingElement(String leadingElement)
+	{
+		this.leadingElement = leadingElement;
 	}
 
 	public void setBuildingBlocks(List<String> buildingBlocks)
@@ -109,6 +115,11 @@ public class PredictorInfo
 	public String getName()
 	{
 		return name;
+	}
+
+	public String getLeadingElement()
+	{
+		return leadingElement;
 	}
 
 	public List<String> getBuildingBlocks()

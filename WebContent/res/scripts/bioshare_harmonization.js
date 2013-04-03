@@ -452,15 +452,14 @@ function insertNewRow(url)
 		data["description"] = $('#descriptionOfPredictor').val();
 		data["dataType"] = $('#dataTypeOfPredictor').val();
 		data["unit_name"] = $('#unitOfPredictor').val();
-		data["categories_name"] = uniqueElementToString($('#categoryOfPredictor').val().split(","), ",");
-
-		buildingBlockString = uniqueElementToString($('#buildingBlocks').val().split(";"), ";");
-
-		data["buildingBlocks"] = uniqueElementToString(buildingBlockString.split(","), ",");
-
+		data["categories_name"] = $('#categoryOfPredictor').val();
+//		data["categories_name"] = uniqueElementToString($('#categoryOfPredictor').val().split(","), ",");
+//		buildingBlockString = uniqueElementToString($('#buildingBlocks').val().split(";"), ";");
+//		data["buildingBlocks"] = uniqueElementToString(buildingBlockString.split(","), ",");
+		data["buildingBlocks"] = $('#buildingBlocks').val();
+		data["leadingElement"] = $('#leadingElement').val();
 		//add the data to table
 		identifier = data["name"].replace(/\s/g,"_");
-		
 		data["identifier"] = identifier;
 
 		$.ajax({
@@ -529,6 +528,7 @@ function populateRowInTable(data, url)
 		categories = data["category"];
 		unit = data["unit"];
 		buildingBlocks = data["buildingBlocks"];
+		leadingElement = data["leadingElement"];
 		
 		row = "<tr><th class=\"ui-corner-all\">ID:</td>";
 		row += "<td class=\"ui-corner-all\">" + identifier + "<div style=\"cursor:pointer;height:16px;width:16px;" 
@@ -545,7 +545,7 @@ function populateRowInTable(data, url)
 
 		if(buildingBlocks != "" && buildingBlocks != null)
 		{
-			selectBlocks = "";
+			var selectBlocks = "";
 			for( var i = 0 ; i < buildingBlocks.split(";").length ; i++)
 			{
 				eachDefinition = buildingBlocks.split(";")[i];
@@ -557,15 +557,44 @@ function populateRowInTable(data, url)
 				+ "<td id=\"variableBuildingBlocks\" name=\"variableBuildingBlocks\" class=\"ui-corner-all\">" + selectBlocks + "</td></tr>";
 		}
 		
+		if(leadingElement != "" && leadingElement != null)
+		{
+			var selectElements = createMultipleSelect(leadingElement.split(";"));
+			row += "<tr><th class=\"ui-corner-all\">Leading element:</td>"
+				+ "<td id=\"variableLeadingElement\" name=\"variableLeadingElement\" class=\"ui-corner-all\">" + selectElements + "</td></tr>";
+		}
+		
 		row += "<tr><td></td><td><input type=\"button\" id=\"matchSelectedVariable\"  style=\"margin-left:250px;\"" 
 			+  "class=\"btn btn-info btn-small\" value=\"Match selected variable\"></td><tr>";
 		
 		$('#variableDetail').empty().append(row).show();
-		
 		$('td[name="variableBuildingBlocks"] >select').chosen();
-
 		$('td[name="category"] >select').chosen();
-		
+		$('td[name="variableLeadingElement"] >select').chosen();
+//		$('#variableDetail i').each(function(){
+//			$(this).click(function(){
+//				$(this).parent().children().hide();
+//				var option = null;
+//				$(this).parent().children('select option').each(function(){
+//					option += $(this).text() + ";";
+//				});
+//				if(option != null)
+//					option = option.subString(0, option.length - 1);
+//				$(this).parent().append('<input type="textfield"/>');
+//				var confirmButton = $('<button />').val();
+//				input.val(option).click(function(){
+//					var options = $(this).val().split(';');
+//					var select = $(this).parent().children('select').empty();
+//					for(var i = 0; i < options.length; i++){
+//						select.append('<option select="selected">' + options[i] + '</option>');
+//					}
+//					select.trigger("liszt:updated");
+//					$(this).parent().children().show();
+//					$(this).remove();
+//				});
+//				
+//			});
+//		});
 		$('#variableDetail tr:eq(0) div').click(function(){
 			$('#overviewTable').parents('div').eq(0).width("100%").find('tr').children().show();
 			$("input[name=\"selectedVariableID\"]").val(null);
@@ -744,12 +773,9 @@ function uniqueElements(anArray)
 	return result;
 }
 
-function uniqueElementToString(anArray, separator)
-{	
+function uniqueElementToString(anArray, separator){	
 	unique = uniqueElements(anArray);
-
 	backToString = "";
-
 	for(var i = 0; i < unique.length; i++){
 		if(separator != null){
 			backToString += unique[i] + separator;
@@ -757,25 +783,24 @@ function uniqueElementToString(anArray, separator)
 			backToString += unique[i] + ",";
 		}
 	}
-
 	backToString = backToString.substring(0, backToString.length - 1);
-
 	return backToString;
 }
 
 //Create a jquery chosen multiple select element
-function createMultipleSelect(listOfTerms)
-{	
+function createMultipleSelect(listOfTerms){	
 	listOfTerms = uniqueElements(listOfTerms);
-
 	selectBlocks = "<select multiple=\"true\" style=\"width:90%;\">";
-
 	for(var i = 0; i < listOfTerms.length; i++){
 		selectBlocks += "<option selected=\"selected\">" + listOfTerms[i] + "</option>";
 	}
 	selectBlocks += "</select>";
-
+//	selectBlocks += "<i class=\"icon-edit\"></i>"
 	return selectBlocks;
+}
+
+function editJqueryChosen(element){
+	$(element).append('<input type="textfield" value="change your code"/>');
 }
 
 function showMessage(message, success)

@@ -159,7 +159,6 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 				else if ("download_json_showPredictors".equals(request.getAction()))
 				{
 					String predictionModel = request.getString("name");
-
 					ComputeProtocol cp = db.find(ComputeProtocol.class,
 							new QueryRule(ComputeProtocol.NAME, Operator.EQUALS, predictionModel)).get(0);
 					List<JSONFeature> listOfFeatures = new ArrayList<JSONFeature>();
@@ -183,13 +182,22 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 							Query<ObservedValue> query = db.query(ObservedValue.class);
 							query.addRules(new QueryRule(ObservedValue.TARGET_NAME, Operator.EQUALS, eachPredictor
 									.getName()));
-							query.addRules(new QueryRule(ObservedValue.FEATURE_NAME, Operator.EQUALS, "BuildingBlocks"));
+							// query.addRules(new
+							// QueryRule(ObservedValue.FEATURE_NAME,
+							// Operator.EQUALS, "BuildingBlocks"));
 							String buildingBlocks = null;
+							String leadingElement = null;
 							if (query.find().size() > 0)
 							{
-								buildingBlocks = query.find().get(0).getValue();
+								for (ObservedValue ov : query.find())
+								{
+									if (ov.getFeature_Name().equals("BuildingBlocks")) buildingBlocks = ov.getValue();
+									if (ov.getFeature_Name().equals("LeadingElement")) leadingElement = ov.getValue();
+								}
 							}
-							JSONFeature feature = new JSONFeature(eachPredictor, buildingBlocks, categories);
+
+							JSONFeature feature = new JSONFeature(eachPredictor, buildingBlocks, leadingElement,
+									categories);
 							listOfFeatures.add(feature);
 						}
 
@@ -275,7 +283,7 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 								categories.add(new JSONCategory(c));
 							}
 						}
-						jsfeature = new JSONFeature(m, null, categories);
+						jsfeature = new JSONFeature(m, null, null, categories);
 					}
 					src = jsfeature;
 				}
@@ -618,9 +626,18 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 				this.getModel().getPredictors().put(m.getId(), predictor);
 				Query<ObservedValue> query = db.query(ObservedValue.class);
 				query.addRules(new QueryRule(ObservedValue.TARGET_NAME, Operator.EQUALS, m.getName()));
-				query.addRules(new QueryRule(ObservedValue.FEATURE_NAME, Operator.EQUALS, "BuildingBlocks"));
-				if (query.find().size() > 0) this.getModel().getPredictors().get(m.getId())
-						.setBuildingBlocks(query.find().get(0).getValue().split(";"));
+				// query.addRules(new QueryRule(ObservedValue.FEATURE_NAME,
+				// Operator.EQUALS, "BuildingBlocks"));
+				for (ObservedValue ov : query.find())
+				{
+					if (ov.getFeature_Name().equalsIgnoreCase("BuildingBlocks")) this.getModel().getPredictors()
+							.get(m.getId()).setBuildingBlocks(ov.getValue().split(";"));
+					if (ov.getFeature_Name().equalsIgnoreCase("LeadingElement")) this.getModel().getPredictors()
+							.get(m.getId()).setLeadingElement(ov.getValue());
+				}
+				// if (query.find().size() > 0)
+				// this.getModel().getPredictors().get(m.getId())
+				// .setBuildingBlocks(query.find().get(0).getValue().split(";"));
 			}
 		}
 	}
@@ -629,6 +646,7 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 	{
 		StringBuilder stringBuilder = new StringBuilder();
 		String predictionModelName = data.get("selected").trim();
+		String leadingElementString = data.get("leadingElement".toLowerCase()).trim();
 		String buildingBlockString = data.get("buildingBlocks".toLowerCase()).trim();
 		String unitName = data.get(Measurement.UNIT_NAME.toLowerCase()).trim();
 		String categories = data.get(Measurement.CATEGORIES_NAME.toLowerCase()).trim();
@@ -692,12 +710,31 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 			db.add(buildingBlock);
 		}
 
-		if (buildingBlockString != null && !buildingBlockString.equals(""))
+		if (db.find(Measurement.class, new QueryRule(Measurement.NAME, Operator.EQUALS, "LeadingElement")).size() == 0)
+		{
+			Measurement leadingElement = new Measurement();
+			leadingElement.setName("LeadingElement");
+			leadingElement.setLabel("Leading element");
+			leadingElement.setInvestigation_Name(PREDICTIONMODEL);
+			db.add(leadingElement);
+		}
+
+		if (buildingBlockString != null && !buildingBlockString.isEmpty())
 		{
 			ObservedValue ov = new ObservedValue();
 			ov.setTarget_Name(m.getName());
 			ov.setFeature_Name("BuildingBlocks");
 			ov.setValue(buildingBlockString);
+			ov.setInvestigation_Name(PREDICTIONMODEL);
+			db.add(ov);
+		}
+
+		if (leadingElementString != null && !leadingElementString.isEmpty())
+		{
+			ObservedValue ov = new ObservedValue();
+			ov.setTarget_Name(m.getName());
+			ov.setFeature_Name("LeadingElement");
+			ov.setValue(leadingElementString);
 			ov.setInvestigation_Name(PREDICTIONMODEL);
 			db.add(ov);
 		}
@@ -883,7 +920,8 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 
 		Query<ObservedValue> query = db.query(ObservedValue.class);
 		query.addRules(new QueryRule(ObservedValue.TARGET_NAME, Operator.EQUALS, m.getName()));
-		query.addRules(new QueryRule(ObservedValue.FEATURE_NAME, Operator.EQUALS, "BuildingBlocks"));
+		// query.addRules(new QueryRule(ObservedValue.FEATURE_NAME,
+		// Operator.EQUALS, "BuildingBlocks"));
 
 		if (query.find().size() > 0) db.remove(query.find());
 
@@ -1041,9 +1079,10 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 		private final String unit;
 		private final Integer identifier;
 		private final String buildingBlocks;
+		private final String leadingElement;
 		private final List<JSONCategory> categories;
 
-		public JSONFeature(Measurement m, String buildingBlocks, List<JSONCategory> categories)
+		public JSONFeature(Measurement m, String buildingBlocks, String leadingElement, List<JSONCategory> categories)
 		{
 			this.id = m.getId();
 			this.name = m.getName();
@@ -1054,6 +1093,7 @@ public class Harmonization extends EasyPluginController<HarmonizationModel>
 			this.unit = m.getUnit_Name();
 			this.categories = categories;
 			this.buildingBlocks = buildingBlocks;
+			this.leadingElement = leadingElement;
 		}
 	}
 

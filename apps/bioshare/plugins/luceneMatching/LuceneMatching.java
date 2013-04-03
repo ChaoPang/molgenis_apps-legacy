@@ -62,7 +62,7 @@ public class LuceneMatching
 		luceneSearcher = new IndexSearcher(luceneReader);
 	}
 
-	private List<Map<String, Set<OntologyTermContainer>>> getTermExpansion(List<String> buildingBlocks)
+	private List<Map<String, Set<OntologyTermContainer>>> getTermExpansion(String label, List<String> buildingBlocks)
 			throws IOException
 	{
 		List<List<String>> potentialBlocks = new ArrayList<List<String>>();
@@ -70,6 +70,9 @@ public class LuceneMatching
 		{
 			potentialBlocks.add(Arrays.asList(eachBlock.split(",")));
 		}
+		List<String> storeLabel = new ArrayList<String>();
+		storeLabel.add(label);
+		potentialBlocks.add(storeLabel);
 		return combineTermByIndex(potentialBlocks, true);
 	}
 
@@ -201,8 +204,6 @@ public class LuceneMatching
 					new ArrayList<String>(), d.get("ontologyTerm"), d.get("ontologyLabel"));
 			for (String synonym : d.getValues("ontologyTermSynonym"))
 				ontologyContainer.getSynonyms().add(synonym);
-			if (!ontologyContainer.getSynonyms().contains(eachBlock.toLowerCase())) ontologyContainer.getSynonyms()
-					.add(eachBlock.toLowerCase());
 			if (!listOfOntologyTerms.contains(ontologyContainer)) listOfOntologyTerms.add(ontologyContainer);
 		}
 		OntologyTermContainer originalTerm = new OntologyTermContainer("original", new ArrayList<String>(),
@@ -254,19 +255,28 @@ public class LuceneMatching
 	}
 
 	public BooleanQuery createQueriesFromOntologyTerm(String originalTerm,
-			Set<OntologyTermContainer> listOfOntologyTerms, int maxClauses) throws ParseException
+			Set<OntologyTermContainer> listOfOntologyTerms, Set<OntologyTermContainer> boostedTerms, int maxClauses)
+			throws ParseException
 	{
+		Set<String> uniqueQuery = new HashSet<String>();
 		BooleanQuery queryPerTerm = new BooleanQuery();
 		for (OntologyTermContainer ontologyTerm : listOfOntologyTerms)
 		{
+			boolean boosted = false;
+			if (boostedTerms != null && boostedTerms.contains(ontologyTerm)) boosted = true;
 			for (String synonym : ontologyTerm.getSynonyms())
 			{
-				if (BooleanQuery.getMaxClauseCount() > maxClauses) BooleanQuery.setMaxClauseCount(maxClauses * 2);
-				synonym = synonym.replaceAll("er ", "er~ ");
-				queryPerTerm.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer())
-						.parse(synonym.toLowerCase()), BooleanClause.Occur.SHOULD);
-				queryPerTerm.add(new QueryParser(Version.LUCENE_30, "category", new PorterStemAnalyzer()).parse(synonym
-						.toLowerCase()), BooleanClause.Occur.SHOULD);
+				if (!uniqueQuery.contains(synonym.toLowerCase()))
+				{
+					uniqueQuery.add(synonym.toLowerCase());
+					if (boosted) synonym = synonym + "^4";
+					if (BooleanQuery.getMaxClauseCount() > maxClauses) BooleanQuery.setMaxClauseCount(maxClauses * 2);
+					// synonym = synonym.replaceAll("er ", "er~ ");
+					queryPerTerm.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer())
+							.parse(synonym.toLowerCase()), BooleanClause.Occur.SHOULD);
+					queryPerTerm.add(new QueryParser(Version.LUCENE_30, "category", new PorterStemAnalyzer())
+							.parse(synonym.toLowerCase()), BooleanClause.Occur.SHOULD);
+				}
 			}
 		}
 		return queryPerTerm;
@@ -277,11 +287,16 @@ public class LuceneMatching
 		for (PredictorInfo predictor : model.getPredictors().values())
 		{
 			List<Map<String, Set<OntologyTermContainer>>> ontologyTermExpansion = null;
-			if (predictor.getBuildingBlocks().size() > 0) ontologyTermExpansion = getTermExpansion(predictor
-					.getBuildingBlocks());
+			// if (predictor.getBuildingBlocks().size() > 0)
+			// ontologyTermExpansion.addAll(getTermExpansion(
+			// predictor.getLabel(), predictor.getBuildingBlocks()));
+			if (predictor.getBuildingBlocks().size() > 0) ontologyTermExpansion = getTermExpansion(
+					predictor.getLabel(), predictor.getBuildingBlocks());
 			else
 				ontologyTermExpansion = getTermExpansion(predictor.getLabel());
-
+			String leadingElement = predictor.getLeadingElement();
+			Set<OntologyTermContainer> boostedTerms = null;
+			if (leadingElement != null) boostedTerms = getOntologyTermsFromIndex(leadingElement.toLowerCase());
 			// predictor.getExpandedQuery().put(predictor.getLabel(),
 			// predictor.getLabel());
 			Map<String, MappingList> mappingsForStudies = new HashMap<String, MappingList>();
@@ -319,7 +334,7 @@ public class LuceneMatching
 					for (Entry<String, Set<OntologyTermContainer>> entry : eachDefinition.entrySet())
 					{
 						groupQuery.add(
-								createQueriesFromOntologyTerm(entry.getKey(), entry.getValue(),
+								createQueriesFromOntologyTerm(entry.getKey(), entry.getValue(), boostedTerms,
 										BooleanQuery.getMaxClauseCount()), BooleanClause.Occur.SHOULD);
 					}
 					finalQuery.add(groupQuery, BooleanClause.Occur.SHOULD);

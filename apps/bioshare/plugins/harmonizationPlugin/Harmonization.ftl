@@ -390,6 +390,12 @@
 										<input id="unitOfPredictor" class="predictorInput" type="text"/>
 									</div>
 									<div class="span2">
+										<span style="display:block;margin:5px;">Leading element: </span>
+									</div>
+									<div class="span2 offset3">
+										<input id="leadingElement" class="predictorInput" type="text"/>
+									</div>
+									<div class="span2">
 										<span style="display:block;margin:5px;">Building blocks: </span>
 									</div>
 									<div class="span2 offset3">
