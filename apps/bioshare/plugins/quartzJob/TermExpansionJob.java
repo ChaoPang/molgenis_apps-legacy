@@ -199,7 +199,7 @@ public class TermExpansionJob implements Job
 				if (ot.getLabel() != null) label = ot.getLabel();
 				List<String> definition = null;
 				if (os.getDefinitions(ot) != null) definition = os.getDefinitions(ot);
-				OntologyTermContainer ontologyTerm = new OntologyTermContainer(ot.getURI().toString(), definition,
+				OntologyTermContainer ontologyTerm = new OntologyTermContainer(ot.getURI().toString(), "", definition,
 						label, ot.getOntologyAccession());
 				expandedQueries.add(ontologyTerm);
 				model.getCachedOntologyTerms().put(ontologyTerm.getOntologyTermID().toString(), ontologyTerm);
@@ -234,8 +234,8 @@ public class TermExpansionJob implements Job
 				if (childOt.getLabel() != null) label = childOt.getLabel();
 				List<String> definition = null;
 				if (os.getDefinitions(childOt) != null) definition = os.getDefinitions(childOt);
-				OntologyTermContainer ontologyTerm = new OntologyTermContainer(childOt.getURI().toString(), definition,
-						label, childOt.getOntologyAccession());
+				OntologyTermContainer ontologyTerm = new OntologyTermContainer(childOt.getURI().toString(), "",
+						definition, label, childOt.getOntologyAccession());
 				model.getCachedOntologyTerms().put(ontologyTerm.getOntologyTermID().toString(), ontologyTerm);
 				if (os.getSynonyms(childOt) != null)
 				{

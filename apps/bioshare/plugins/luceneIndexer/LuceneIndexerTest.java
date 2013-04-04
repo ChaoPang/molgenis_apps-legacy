@@ -38,7 +38,9 @@ import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 
 import plugins.harmonizationPlugin.CreatePotentialTerms;
+import plugins.luceneMatching.LuceneMatching;
 import plugins.ontologyTermInfo.OWLModel;
+import plugins.ontologyTermInfo.OntologyTermContainer;
 import uk.ac.ebi.ontocat.OntologyService;
 import uk.ac.ebi.ontocat.OntologyService.SearchOptions;
 import uk.ac.ebi.ontocat.OntologyServiceException;
@@ -95,59 +97,40 @@ public class LuceneIndexerTest
 	{
 		IndexReader reader = IndexReader.open(FSDirectory.open(indexDirectory), true);
 		IndexSearcher searcher = new IndexSearcher(reader);
-		TopScoreDocCollector collector = TopScoreDocCollector.create(100, true);
-		BooleanQuery q = new BooleanQuery();
-		List<String> query_one = Arrays.asList("current", "currently");
-		List<String> query_two = Arrays.asList("smoker");
-		List<String> query_three = Arrays.asList("cigarette", "beedi");
+		TopScoreDocCollector collector = TopScoreDocCollector.create(30, true);
+		BooleanQuery finalQuery = new BooleanQuery();
 
-		q.add(new QueryParser(Version.LUCENE_30, "investigation", new PorterStemAnalyzer()).parse("finrisk"),
-				BooleanClause.Occur.MUST);
-		BooleanQuery groupQuery = new BooleanQuery();
-		groupQuery.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse("Current"),
-				BooleanClause.Occur.SHOULD);
-		groupQuery.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse("quantity"),
-				BooleanClause.Occur.SHOULD);
-		groupQuery.add(
-				new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse("cigarette^4"),
-				BooleanClause.Occur.SHOULD);
-		groupQuery.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse("smoke"),
-				BooleanClause.Occur.SHOULD);
-
-		// groupQuery.add(new QueryParser(Version.LUCENE_30, "category", new
-		// PorterStemAnalyzer()).parse("smoke"),
-		// BooleanClause.Occur.SHOULD);
-		q.add(groupQuery, BooleanClause.Occur.MUST);
-		// q.add(new QueryParser(Version.LUCENE_30, "measurement", new
-		// PorterStemAnalyzer())
-		// .parse("current cigarette smoke"), BooleanClause.Occur.SHOULD);
-		// q.add(new QueryParser(Version.LUCENE_30, "category", new
-		// PorterStemAnalyzer()).parse("current cigarette smoke"),
-		// BooleanClause.Occur.MUST);
-		// groupQuery.add(combineQueries(query_two), BooleanClause.Occur.MUST);
-		// groupQuery.add(combineQueries(query_three),
-		// BooleanClause.Occur.MUST);
-		// q.add(groupQuery, BooleanClause.Occur.MUST);
-		// q.add(new QueryParser(Version.LUCENE_30, "measurement", new
-		// PorterStemAnalyzer())
-		// .parse("current smoke cigarette"), BooleanClause.Occur.SHOULD);
+		LuceneMatching matcher = new LuceneMatching(indexDirectory);
+		Set<OntologyTermContainer> diabetes = matcher.getOntologyTermsFromIndex("diabetes mellitus");
+		Set<OntologyTermContainer> medication = matcher.getOntologyTermsFromIndex("medication");
 		//
-		// q.add(new QueryParser(Version.LUCENE_30, "category", new
-		// PorterStemAnalyzer()).parse("current smoke cigarette"),
-		// BooleanClause.Occur.SHOULD);
-		// q.add(new QueryParser(Version.LUCENE_30, "measurement", new
-		// PorterStemAnalyzer()).parse("current"),
-		// BooleanClause.Occur.MUST);
-		// q.add(new QueryParser(Version.LUCENE_30, "measurement", new
-		// PorterStemAnalyzer()).parse("cigarette"),
-		// BooleanClause.Occur.MUST);
-		// q.add(new QueryParser(Version.LUCENE_30, "measurement", new
-		// PorterStemAnalyzer()).parse("smoker"),
-		// BooleanClause.Occur.MUST);
-		// q.add(new QueryParser(Version.LUCENE_30, "measurement", new
+		// BooleanQuery query_one =
+		// matcher.createQueriesFromOntologyTerm("diabetes mellitus", diabetes,
+		// null, 1024);
+		// BooleanQuery query_two =
+		// matcher.createQueriesFromOntologyTerm("medication", medication, null,
+		// 1024);
+		// finalQuery.add(query_one, BooleanClause.Occur.SHOULD);
+		// finalQuery.add(query_two, BooleanClause.Occur.SHOULD);
+		finalQuery.add(new QueryParser(Version.LUCENE_30, "investigation", new PorterStemAnalyzer()).parse("finrisk"),
+				BooleanClause.Occur.MUST);
+		// finalQuery.add(new QueryParser(Version.LUCENE_30, "measurement", new
 		// PorterStemAnalyzer())
-		// .parse("current use of alcohol"), BooleanClause.Occur.SHOULD);
-		searcher.search(q, collector);
+		// .parse("diabetes medication"), BooleanClause.Occur.SHOULD);
+
+		BooleanQuery groupQuery = new BooleanQuery();
+		finalQuery.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse("medication"),
+				BooleanClause.Occur.SHOULD);
+		finalQuery.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse("diabetes"),
+				BooleanClause.Occur.SHOULD);
+		// finalQuery.add(
+		// new QueryParser(Version.LUCENE_30, "measurement", new
+		// PorterStemAnalyzer()).parse("drink alcohol"),
+		// BooleanClause.Occur.SHOULD);
+
+		// q.add(groupQuery, BooleanClause.Occur.MUST);
+
+		searcher.search(finalQuery, collector);
 		ScoreDoc[] hits = collector.topDocs().scoreDocs;
 		System.out.println("Found " + hits.length + " hits.");
 		for (int i = 0; i < hits.length; ++i)

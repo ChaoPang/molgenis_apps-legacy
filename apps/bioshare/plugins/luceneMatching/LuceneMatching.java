@@ -22,6 +22,7 @@ import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.DisjunctionMaxQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
@@ -110,9 +111,9 @@ public class LuceneMatching
 		return listOfDefinitions;
 	}
 
-	public Set<String> searchForOntologyTermPaths(String eachBlock, String field) throws IOException
+	public Set<OntologyTermContainer> searchForOntologyTermPaths(String eachBlock, String field) throws IOException
 	{
-		Set<String> nodePathSet = new HashSet<String>();
+		Set<OntologyTermContainer> listOfOntologyTerms = new HashSet<OntologyTermContainer>();
 		BooleanQuery q = new BooleanQuery();
 		q.add(new TermQuery(new Term(field, eachBlock.toLowerCase())), BooleanClause.Occur.MUST);
 		TopScoreDocCollector collector = TopScoreDocCollector.create(1000, true);
@@ -122,9 +123,14 @@ public class LuceneMatching
 		{
 			int docId = hits[i].doc;
 			Document d = luceneSearcher.doc(docId);
-			nodePathSet.add(d.get("nodePath"));
+			OntologyTermContainer ontologyContainer = new OntologyTermContainer(d.get("ontologyTermIRI"),
+					d.get("nodePath"), new ArrayList<String>(), d.get("ontologyTerm"), d.get("ontologyLabel"));
+			for (String synonym : d.getValues("ontologyTermSynonym"))
+				ontologyContainer.getSynonyms().add(synonym);
+			if (!ontologyContainer.getSynonyms().contains(eachBlock)) ontologyContainer.getSynonyms().add(eachBlock);
+			if (!listOfOntologyTerms.contains(ontologyContainer)) listOfOntologyTerms.add(ontologyContainer);
 		}
-		return nodePathSet;
+		return listOfOntologyTerms;
 	}
 
 	public Set<OntologyTermContainer> getOntologyTermSynonymsFromIndex(String eachBlock) throws IOException
@@ -140,14 +146,14 @@ public class LuceneMatching
 			int docId = hits[i].doc;
 			Document d = luceneSearcher.doc(docId);
 			OntologyTermContainer ontologyContainer = new OntologyTermContainer(d.get("ontologyTermIRI"),
-					new ArrayList<String>(), d.get("ontologyTerm"), d.get("ontologyLabel"));
+					d.get("nodePath"), new ArrayList<String>(), d.get("ontologyTerm"), d.get("ontologyLabel"));
 			for (String synonym : d.getValues("ontologyTermSynonym"))
 				ontologyContainer.getSynonyms().add(synonym);
 			if (!listOfOntologyTerms.contains(ontologyContainer)) listOfOntologyTerms.add(ontologyContainer);
 		}
 		if (listOfOntologyTerms.size() == 0)
 		{
-			OntologyTermContainer originalTerm = new OntologyTermContainer("original", new ArrayList<String>(),
+			OntologyTermContainer originalTerm = new OntologyTermContainer("original", "", new ArrayList<String>(),
 					eachBlock.toLowerCase(), "local");
 			listOfOntologyTerms.add(originalTerm);
 		}
@@ -160,11 +166,13 @@ public class LuceneMatching
 		if (eachBlock == null) eachBlock = StringUtils.EMPTY;
 		else
 			eachBlock = eachBlock.toLowerCase();
-		Set<String> nodePathSet = searchForOntologyTermPaths(eachBlock, "ontologyTerm");
-		if (nodePathSet.size() == 0) nodePathSet = searchForOntologyTermPaths(eachBlock, "ontologyTermSynonym");
+		Set<OntologyTermContainer> originalTerms = searchForOntologyTermPaths(eachBlock, "ontologyTerm");
+		if (originalTerms.size() == 0) originalTerms = searchForOntologyTermPaths(eachBlock, "ontologyTermSynonym");
+		listOfOntologyTerms.addAll(originalTerms);
+
 		BooleanQuery finalQuery = new BooleanQuery();
-		for (String nodePath : nodePathSet)
-			finalQuery.add(new WildcardQuery(new Term("nodePath", nodePath + "*")), Occur.SHOULD);
+		for (OntologyTermContainer eachOrignalTerm : originalTerms)
+			finalQuery.add(new WildcardQuery(new Term("nodePath", eachOrignalTerm.getNodePath() + ".*")), Occur.SHOULD);
 		TopScoreDocCollector collector = TopScoreDocCollector.create(10000, true);
 		luceneSearcher.search(finalQuery, collector);
 		ScoreDoc[] hits = collector.topDocs().scoreDocs;
@@ -172,7 +180,7 @@ public class LuceneMatching
 		{
 			int docId = hits[i].doc;
 			Document d = luceneSearcher.doc(docId);
-			OntologyTermContainer ontologyContainer = new OntologyTermContainer(d.get("ontologyTermIRI"),
+			OntologyTermContainer ontologyContainer = new OntologyTermContainer(d.get("ontologyTermIRI"), "",
 					new ArrayList<String>(), d.get("ontologyTerm"), d.get("ontologyLabel"));
 			for (String synonym : d.getValues("ontologyTermSynonym"))
 				ontologyContainer.getSynonyms().add(synonym);
@@ -182,7 +190,7 @@ public class LuceneMatching
 		}
 		if (listOfOntologyTerms.size() == 0)
 		{
-			OntologyTermContainer originalTerm = new OntologyTermContainer("original-" + eachBlock,
+			OntologyTermContainer originalTerm = new OntologyTermContainer("original-" + eachBlock, "",
 					new ArrayList<String>(), eachBlock, "local");
 			originalTerm.getSynonyms().add(eachBlock);
 			listOfOntologyTerms.add(originalTerm);
@@ -231,42 +239,34 @@ public class LuceneMatching
 		}
 	}
 
-	public BooleanQuery createQueriesFromOntologyTerm(String originalTerm,
-			Set<OntologyTermContainer> listOfOntologyTerms, Set<OntologyTermContainer> boostedTerms, int maxClauses)
-			throws ParseException
+	public DisjunctionMaxQuery createQueriesFromOntologyTerm(String originalTerm,
+			Set<OntologyTermContainer> listOfOntologyTerms, Set<OntologyTermContainer> boostedOntologyTerms,
+			int maxClauses) throws ParseException
 	{
-		Set<String> uniqueQuery = new HashSet<String>();
-		BooleanQuery queryPerTerm = new BooleanQuery();
+		DisjunctionMaxQuery queryPerTerm = new DisjunctionMaxQuery(0);
 		for (OntologyTermContainer ontologyTerm : listOfOntologyTerms)
 		{
 			boolean boosted = false;
-			if (boostedTerms != null && boostedTerms.contains(ontologyTerm)) boosted = true;
+			if (boostedOntologyTerms != null && boostedOntologyTerms.contains(ontologyTerm)) boosted = true;
 			for (String synonym : ontologyTerm.getSynonyms())
 			{
+				DisjunctionMaxQuery queryPerOntologyTerm = new DisjunctionMaxQuery(0);
 				synonym = synonym.replaceAll("[^0-9a-zA-Z ]", "").trim().toLowerCase();
-				if (!uniqueQuery.contains(synonym))
+				if (boosted)
 				{
-					uniqueQuery.add(synonym.toLowerCase());
-					if (boosted)
+					String terms[] = synonym.split(" ");
+					String combinedTerm = StringUtils.EMPTY;
+					for (String eachTerm : terms)
 					{
-						String[] terms = synonym.split(" ");
-						synonym = StringUtils.EMPTY;
-						for (String eachTerm : terms)
-						{
-							if (!eachTerm.replaceAll(" ", "").isEmpty()) synonym = synonym + eachTerm.trim() + "^4 ";
-						}
-						synonym = synonym.trim();
+						if (!eachTerm.replaceAll(" ", "").isEmpty()) combinedTerm += eachTerm + "^4 ";
 					}
-					if (queryPerTerm.getClauses().length >= maxClauses - 2) BooleanQuery
-							.setMaxClauseCount(maxClauses * 2);
-					// synonym = synonym.replaceAll("er ", "er~ ");
-					queryPerTerm.add(
-							new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse(synonym),
-							BooleanClause.Occur.SHOULD);
-					queryPerTerm.add(
-							new QueryParser(Version.LUCENE_30, "category", new PorterStemAnalyzer()).parse(synonym),
-							BooleanClause.Occur.SHOULD);
+					synonym = combinedTerm.trim();
 				}
+				queryPerOntologyTerm.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer())
+						.parse(synonym));
+				queryPerOntologyTerm.add(new QueryParser(Version.LUCENE_30, "category", new PorterStemAnalyzer())
+						.parse(synonym));
+				queryPerTerm.add(queryPerOntologyTerm);
 			}
 		}
 		return queryPerTerm;
@@ -293,12 +293,15 @@ public class LuceneMatching
 			for (String eachStudy : model.getSelectedValidationStudy())
 			{
 				MappingList mapping = new MappingList();
-				BooleanQuery finalQuery = new BooleanQuery();
-				finalQuery.add(new QueryParser(Version.LUCENE_30, "investigation", new PorterStemAnalyzer())
-						.parse(eachStudy.toLowerCase()), BooleanClause.Occur.MUST);
+				DisjunctionMaxQuery finalQuery = new DisjunctionMaxQuery(0);
+				// finalQuery.add(new QueryParser(Version.LUCENE_30,
+				// "investigation", new PorterStemAnalyzer())
+				// .parse(eachStudy.toLowerCase()), BooleanClause.Occur.MUST);
 				for (Map<String, Set<OntologyTermContainer>> eachDefinition : ontologyTermExpansion)
 				{
 					BooleanQuery groupQuery = new BooleanQuery();
+					groupQuery.add(new QueryParser(Version.LUCENE_30, "investigation", new PorterStemAnalyzer())
+							.parse(eachStudy.toLowerCase()), BooleanClause.Occur.MUST);
 					int defaultMaxClauses = BooleanQuery.getMaxClauseCount();
 					for (Entry<String, Set<OntologyTermContainer>> entry : eachDefinition.entrySet())
 					{
@@ -306,7 +309,7 @@ public class LuceneMatching
 								createQueriesFromOntologyTerm(entry.getKey(), entry.getValue(), boostedTerms,
 										BooleanQuery.getMaxClauseCount()), BooleanClause.Occur.SHOULD);
 					}
-					finalQuery.add(groupQuery, BooleanClause.Occur.SHOULD);
+					finalQuery.add(groupQuery);
 					BooleanQuery.setMaxClauseCount(defaultMaxClauses);
 				}
 				TopScoreDocCollector collector = TopScoreDocCollector.create(100, true);

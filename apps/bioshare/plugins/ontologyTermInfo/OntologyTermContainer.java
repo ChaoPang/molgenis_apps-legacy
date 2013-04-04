@@ -7,15 +7,17 @@ import java.util.Set;
 public class OntologyTermContainer
 {
 	private final String ontologyTermID;
+	private final String nodePath;
 	private final String ontologyID;
 	private final String label;
 	private final List<String> ontologyTermDefinition;
 	private Set<OntologyTermContainer> listOfDescendClass;
 	private Set<String> synonyms;
 
-	public OntologyTermContainer(String ontologyTermId, List<String> ontologyTermDefinition, String label,
-			String ontologyID)
+	public OntologyTermContainer(String ontologyTermId, String nodePath, List<String> ontologyTermDefinition,
+			String label, String ontologyID)
 	{
+		this.nodePath = nodePath;
 		this.ontologyTermID = ontologyTermId;
 		this.ontologyID = ontologyID;
 		this.ontologyTermDefinition = ontologyTermDefinition;
@@ -56,6 +58,11 @@ public class OntologyTermContainer
 	public String getOntologyID()
 	{
 		return ontologyID;
+	}
+
+	public String getNodePath()
+	{
+		return nodePath;
 	}
 
 	public String getLabel()
