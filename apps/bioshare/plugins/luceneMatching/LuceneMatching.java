@@ -166,8 +166,9 @@ public class LuceneMatching
 		if (eachBlock == null) eachBlock = StringUtils.EMPTY;
 		else
 			eachBlock = eachBlock.toLowerCase();
-		Set<OntologyTermContainer> originalTerms = searchForOntologyTermPaths(eachBlock, "ontologyTerm");
-		if (originalTerms.size() == 0) originalTerms = searchForOntologyTermPaths(eachBlock, "ontologyTermSynonym");
+		Set<OntologyTermContainer> originalTerms = searchForOntologyTermPaths(eachBlock, "ontologyTermSynonym");
+		// if (originalTerms.size() == 0) originalTerms =
+		// searchForOntologyTermPaths(eachBlock, "ontologyTermSynonym");
 		listOfOntologyTerms.addAll(originalTerms);
 
 		BooleanQuery finalQuery = new BooleanQuery();
