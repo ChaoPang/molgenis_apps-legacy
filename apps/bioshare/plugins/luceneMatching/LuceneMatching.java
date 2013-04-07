@@ -295,9 +295,6 @@ public class LuceneMatching
 			{
 				MappingList mapping = new MappingList();
 				DisjunctionMaxQuery finalQuery = new DisjunctionMaxQuery(0);
-				// finalQuery.add(new QueryParser(Version.LUCENE_30,
-				// "investigation", new PorterStemAnalyzer())
-				// .parse(eachStudy.toLowerCase()), BooleanClause.Occur.MUST);
 				for (Map<String, Set<OntologyTermContainer>> eachDefinition : ontologyTermExpansion)
 				{
 					BooleanQuery groupQuery = new BooleanQuery();
@@ -322,6 +319,9 @@ public class LuceneMatching
 					double score = hit.score;
 					Document d = luceneSearcher.doc(docId);
 					DecimalFormat df = new DecimalFormat("#0.000");
+					// Explanation explain = luceneSearcher.explain(finalQuery,
+					// docId);
+					// System.out.println(explain);
 					score = Double.parseDouble(df.format(score));
 					mapping.add(d.get("measurementID").toString(), "", Integer.parseInt(d.get("measurementID")), score);
 				}

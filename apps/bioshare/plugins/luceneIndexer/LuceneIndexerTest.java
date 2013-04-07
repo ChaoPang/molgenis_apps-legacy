@@ -114,11 +114,15 @@ public class LuceneIndexerTest
 		// finalQuery.add(query_two, BooleanClause.Occur.SHOULD);
 		finalQuery.add(new QueryParser(Version.LUCENE_30, "investigation", new PorterStemAnalyzer()).parse("finrisk"),
 				BooleanClause.Occur.MUST);
+
 		// finalQuery.add(new QueryParser(Version.LUCENE_30, "measurement", new
 		// PorterStemAnalyzer())
 		// .parse("diabetes medication"), BooleanClause.Occur.SHOULD);
 
 		BooleanQuery groupQuery = new BooleanQuery();
+		finalQuery.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse("ets"),
+				BooleanClause.Occur.SHOULD);
+		System.out.println(finalQuery);
 		finalQuery.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse("medication"),
 				BooleanClause.Occur.SHOULD);
 		finalQuery.add(new QueryParser(Version.LUCENE_30, "measurement", new PorterStemAnalyzer()).parse("diabetes"),
